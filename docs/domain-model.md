@@ -286,14 +286,7 @@ graph TD
 | `UpdateUnit` | Edit Unit metadata | Unit must exist and be active | Building (Unit child) |
 | `DeactivateBuilding` | Soft-delete a Building | Must have no active Units (or force-cascade, TBD) | Building |
 
-**Ambiguity A1 — Cascade deactivation of Units when a Building is deactivated:**
-| Option | Pros | Cons |
-|---|---|---|
-| Block deactivation if active Units exist | Simple, safe, prevents orphaned data | Requires manager to manually deactivate all units first |
-| Cascade soft-delete to Units and Residents | Single manager action | Complex, harder to audit, may surprise managers |
-| Soft-delete Building only, orphan Units | Simple implementation | Leaves data in inconsistent state |
-
-**Recommendation:** Option 1 (block) — ⚠️ HYPOTHESIS — validate with product team.
+**A1 — RESOLVED: Cascade with confirmation.** Deactivating a Building cascade-deactivates all its Units and moves out all Residents, but only when an explicit confirmation flag (`force=true`) is provided. Default behavior (without the flag) blocks deactivation if active Units/Residents exist.
 
 ### BC-03: Resident Registry
 
@@ -647,15 +640,15 @@ Manager                         BC-07 Incident
 
 ## 10. Next Actions
 
-**Validation questions requiring stakeholder input:**
+**Resolved hypotheses (2026-02-24):**
 
-1. **A1 [Product]:** When a Building is deactivated, should it cascade-deactivate Units and Residents, or block until they are manually deactivated?
-2. **A2 [Legal]:** Confirm the LGPD data retention period after MoveOutDate / CheckOutAt (currently assumed 30 days).
-3. **A3 [Legal]:** Define the legal hold rules — can PII be erased if there is an open Incident referencing the Resident?
-4. **A4 [Product]:** Confirm InviteToken expiry window (currently assumed 72 hours).
-5. **A5 [Product]:** Should Announcement drafts be visible to other Managers in the same Tenant, or only the authoring Manager?
-6. **A6 [Product]:** Should a Manager be able to CheckIn a Visitor who was not pre-registered (walk-in), or must RegisterVisit always precede CheckIn?
-7. **A7 [Product]:** What happens to open Visits when a Resident moves out — should they auto-close?
+1. **A1 [Product] — RESOLVED: Cascade with confirmation.** Deactivating a Building cascade-deactivates all its Units and moves out all Residents, but only when an explicit confirmation flag (`force=true`) is provided. Default behavior blocks deactivation if active Units/Residents exist.
+2. **A2 [Legal] — RESOLVED: 5-year retention.** PII is eligible for pseudonymization 5 years after MoveOutDate / CheckOutAt. This provides maximum legal safety for property management disputes in LGPD-regulated jurisdictions.
+3. **A3 [Legal] — RESOLVED: Block erasure + notify manager.** PII cannot be pseudonymized while any referencing Incident is in an open or in-progress state. The system notifies the building manager that they must resolve open incidents before the erasure can proceed.
+4. **A4 [Product] — RESOLVED: 72-hour expiry.** Invitation tokens expire after 72 hours. Expired tokens can be re-issued by the manager.
+5. **A5 [Product] — RESOLVED: Visible to all tenant managers.** Announcement drafts are visible to and editable by all Managers within the same Tenant. No per-manager draft isolation.
+6. **A6 [Product] — RESOLVED: Allow walk-ins.** A Manager can check in a Visitor directly without prior registration. RegisterVisit and CheckIn happen in a single operation. The Visit record is created and immediately transitions to CheckedIn status.
+7. **A7 [Product] — RESOLVED: Auto-close + notify.** When a Resident moves out, all their open Visits (checked-in but not checked-out) are automatically closed. The system notifies the manager that these Visits were force-closed due to the move-out.
 
 **Architecture follow-up:**
 
