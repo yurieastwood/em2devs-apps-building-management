@@ -1,6 +1,6 @@
-@EM2Devs.BuildingManagement.Application_HostAddress = http://localhost:5286
+@EM2Devs.BuildingManagement.Api_HostAddress = http://localhost:5286
 
-GET {{EM2Devs.BuildingManagement.Application_HostAddress}}/weatherforecast/
+GET {{EM2Devs.BuildingManagement.Api_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
