@@ -1,4 +1,4 @@
-namespace EM2Devs.BuildingManagement.Application.Unit.Tests;
+namespace EM2Devs.BuildingManagement.Api.Unit.Tests;
 
 public class WeatherForecastTests
 {
