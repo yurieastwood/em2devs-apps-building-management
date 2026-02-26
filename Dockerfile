@@ -9,18 +9,21 @@ WORKDIR /src
 
 # Copy solution and project files first for better layer caching
 COPY em2devs-apps-building-management.sln .
+COPY src/EM2Devs.BuildingManagement.Domain/EM2Devs.BuildingManagement.Domain.csproj src/EM2Devs.BuildingManagement.Domain/
 COPY src/EM2Devs.BuildingManagement.Application/EM2Devs.BuildingManagement.Application.csproj src/EM2Devs.BuildingManagement.Application/
-COPY tests/EM2Devs.BuildingManagement.Application.Unit.Tests/EM2Devs.BuildingManagement.Application.Unit.Tests.csproj tests/EM2Devs.BuildingManagement.Application.Unit.Tests/
+COPY src/EM2Devs.BuildingManagement.Infrastructure/EM2Devs.BuildingManagement.Infrastructure.csproj src/EM2Devs.BuildingManagement.Infrastructure/
+COPY src/EM2Devs.BuildingManagement.Api/EM2Devs.BuildingManagement.Api.csproj src/EM2Devs.BuildingManagement.Api/
+COPY tests/EM2Devs.BuildingManagement.Api.Unit.Tests/EM2Devs.BuildingManagement.Api.Unit.Tests.csproj tests/EM2Devs.BuildingManagement.Api.Unit.Tests/
 RUN dotnet restore
 
 # Copy everything else and build
 COPY . .
-RUN dotnet build src/EM2Devs.BuildingManagement.Application/EM2Devs.BuildingManagement.Application.csproj \
+RUN dotnet build src/EM2Devs.BuildingManagement.Api/EM2Devs.BuildingManagement.Api.csproj \
     -c $BUILD_CONFIGURATION \
     --no-restore
 
 FROM build AS test
-RUN dotnet test tests/EM2Devs.BuildingManagement.Application.Unit.Tests/EM2Devs.BuildingManagement.Application.Unit.Tests.csproj \
+RUN dotnet test tests/EM2Devs.BuildingManagement.Api.Unit.Tests/EM2Devs.BuildingManagement.Api.Unit.Tests.csproj \
     -c $BUILD_CONFIGURATION \
     --no-build \
     --no-restore \
@@ -28,7 +31,7 @@ RUN dotnet test tests/EM2Devs.BuildingManagement.Application.Unit.Tests/EM2Devs.
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish src/EM2Devs.BuildingManagement.Application/EM2Devs.BuildingManagement.Application.csproj \
+RUN dotnet publish src/EM2Devs.BuildingManagement.Api/EM2Devs.BuildingManagement.Api.csproj \
     -c $BUILD_CONFIGURATION \
     --no-build \
     -o /app/publish
@@ -40,4 +43,4 @@ WORKDIR /app
 USER $APP_UID
 
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "EM2Devs.BuildingManagement.Application.dll"]
+ENTRYPOINT ["dotnet", "EM2Devs.BuildingManagement.Api.dll"]

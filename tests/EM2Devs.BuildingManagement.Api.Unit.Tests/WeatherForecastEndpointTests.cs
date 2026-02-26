@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 
-namespace EM2Devs.BuildingManagement.Application.Unit.Tests;
+namespace EM2Devs.BuildingManagement.Api.Unit.Tests;
 
 public class WeatherForecastEndpointTests : IClassFixture<WebApplicationFactory<Program>>
 {

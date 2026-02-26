@@ -12,6 +12,7 @@
     <ThresholdType>line,branch,method</ThresholdType>
     <ThresholdStat>total</ThresholdStat>
     <ExcludeByFile>**/obj/**/*.generated.cs</ExcludeByFile>
+    <Exclude>[*.Tests]*,[*.Unit.Tests]*</Exclude>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,7 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\EM2Devs.BuildingManagement.Application\EM2Devs.BuildingManagement.Application.csproj" />
+    <ProjectReference Include="..\..\src\EM2Devs.BuildingManagement.Api\EM2Devs.BuildingManagement.Api.csproj" />
   </ItemGroup>
 
 </Project>
