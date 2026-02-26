@@ -36,13 +36,14 @@
 | **Resident** | A person assigned to a Unit. Has a role of either Owner or Renter. In Phase 1, residents do not access the API directly. | Resident Registry | "Tenant" (avoid — conflicts with Tenant the SaaS customer), "Occupant", "User" (only managers are Users in MVP) |
 | **Owner** | A Resident role indicating the person holds legal ownership of the Unit. An Owner may simultaneously rent out their unit. | Resident Registry | "Proprietor" |
 | **Renter** | A Resident role indicating the person occupies the Unit under a lease or rental agreement. | Resident Registry | "Tenant" (avoid — conflicts), "Leaseholder" |
-| **Manager** | A platform User who belongs to a Tenant and manages one or more Buildings. Managers are the only API actors in Phase 1. | Identity & Access | "Admin" (avoid generality), "BuildingAdmin" |
+| **Manager** | A professional building manager who is hired/elected to manage one or more Buildings. Managers do not own the buildings — they are paid for the role. A Manager belongs to a Tenant and is the only API actor in Phase 1. | Identity & Access | "Admin" (avoid generality), "BuildingAdmin", "Landlord" |
 | **Announcement** | A message published by a Manager to communicate with residents or other stakeholders. Has a lifecycle: Draft → Published → Archived. | Announcement | "Notice", "Post", "Message" |
 | **Audience** | The set of recipients targeted by an Announcement. Defined by scope: Building-wide, Unit-level, or Individual Resident. | Announcement | "Recipients", "Targets" |
 | **Document** | A file uploaded by a Manager for sharing. Access is granted explicitly by the Manager to Buildings or individual Residents. | Document | "File", "Attachment" |
 | **Document Access Grant** | An explicit record of permission for a Building or Resident to access a Document. Can be revoked. | Document | "Permission", "Share" |
-| **Visit** | A recorded event of a visitor arriving at a Building. Linked to a Unit and an authorizing Resident. | Visit | "Guest", "Entry" |
-| **Visitor** | A non-resident person arriving at a Building. NOT a platform user. Identified by name and document. | Visit | "Guest", "Non-resident" |
+| **Visit** | A recorded site visit by a Manager to one of the Buildings they manage, as part of their professional duties. Includes inspection of facilities, conversations with employees and residents, and observations. | Visit | "Inspection", "Site Inspection", "Walkthrough" |
+| **Visit Checklist** | A predefined set of inspection items that a Manager checks during a Visit (e.g., facilities, cleanliness, security, elevators). | Visit | "Inspection Checklist" |
+| **Follow-Up Action** | An action item created during a Visit that requires attention after the visit (e.g., "fix lobby light", "schedule elevator maintenance"). May be linked to an Incident. | Visit | "Action Item", "Task" |
 | **Incident** | A reported problem or event requiring attention within a Building. Has a lifecycle: Open → InProgress → Resolved. | Incident | "Issue", "Ticket", "Report" |
 | **Incident Type** | Classification of an incident (e.g., Maintenance, Security, Infrastructure, Noise). | Incident | "Category" |
 | **Incident Severity** | Urgency classification of an incident (e.g., Low, Medium, High, Critical). | Incident | "Priority" |
@@ -89,11 +90,11 @@
 **Owns:** Document aggregate, DocumentAccessGrant entity.
 **Key invariant:** A Document belongs to exactly one Tenant. Access may be granted to Buildings or individual Residents within that Tenant. File storage is abstracted — the domain holds only a StorageReference value object.
 
-### BC-06: Visit Registration
+### BC-06: Visit (Site Inspection)
 
-**Responsibility:** Logging visitor arrivals and departures, linking visits to Units and authorizing Residents.
-**Owns:** Visit aggregate.
-**Key invariant:** A Visit must reference a valid Building, Unit, and a Resident who is active in that Unit at registration time. CheckOut cannot precede CheckIn.
+**Responsibility:** Recording the Manager's site visits to Buildings they manage, including inspection checklists, observations, and follow-up actions.
+**Owns:** Visit aggregate, VisitChecklist entity, FollowUpAction entity.
+**Key invariant:** A Visit must reference a valid Building within the Manager's assigned buildings. A Visit has a lifecycle: Scheduled → InProgress → Completed. Checklist items must be resolved (checked or marked N/A) before a Visit can be Completed. Follow-up actions may link to Incidents.
 
 ### BC-07: Incident
 
@@ -118,7 +119,7 @@ graph TD
         RR["BC-03\nResident Registry"]
         ANN["BC-04\nAnnouncement"]
         DOC["BC-05\nDocument"]
-        VIS["BC-06\nVisit Registration"]
+        VIS["BC-06\nVisit\n(Site Inspection)"]
         INC["BC-07\nIncident"]
     end
 
@@ -132,15 +133,14 @@ graph TD
     BM -->|"Upstream (Published Language)\nBuilding + Unit IDs"| RR
     BM -->|"Upstream (Published Language)\nBuilding + Unit IDs"| ANN
     BM -->|"Upstream (Published Language)\nBuilding IDs"| DOC
-    BM -->|"Upstream (Published Language)\nBuilding + Unit IDs"| VIS
+    BM -->|"Upstream (Published Language)\nBuilding IDs"| VIS
     BM -->|"Upstream (Published Language)\nBuilding IDs"| INC
 
     RR -->|"Upstream (Published Language)\nResidentId for linking"| ANN
     RR -->|"Upstream (Published Language)\nResidentId for access grants"| DOC
-    RR -->|"Upstream (Published Language)\nResidentId for visit auth"| VIS
 
     MT -.->|"Cross-cutting"| Contexts
-    LGPD -.->|"PII in BC-03"| RR
+    LGPD -.->|"PII in BC-01, BC-03"| RR
 
     style IAM fill:#4A90D9,color:#fff
     style BM fill:#5B8C5A,color:#fff
@@ -208,9 +208,9 @@ graph TD
 
 **LGPD Notes:**
 - Fields marked `[PII]` must be pseudonymized or deleted upon a valid right-to-erasure request.
-- MoveOutDate triggers a 30-day data retention window (⚠️ HYPOTHESIS — validate retention period with legal team).
+- MoveOutDate triggers a 5-year data retention window. (A2 — RESOLVED)
 - DeletedAt soft-delete preserves audit trail; a separate LGPD erasure job nullifies PII fields after the retention window.
-- InviteToken must be treated as sensitive; it should expire after 72 hours (⚠️ HYPOTHESIS — validate with product team).
+- InviteToken must be treated as sensitive; it expires after 72 hours. (A4 — RESOLVED)
 
 ---
 
@@ -238,15 +238,19 @@ graph TD
 
 ---
 
-### BC-06: Visit Registration
+### BC-06: Visit (Site Inspection)
 
 | Type | Name | Key Invariants | Fields / Notes |
 |---|---|---|---|
-| AR | **Visit** | Must reference a valid Building, Unit, and Resident (all within same Tenant) at registration time; CheckOutAt must be null or >= CheckInAt; a Visit cannot be checked out before it is checked in; Visitor name must be non-empty | VisitId, TenantId, BuildingId, UnitId, AuthorizingResidentId, Visitor (VO), Status (VO), RegisteredByManagerId, RegisteredAt, CheckInAt (nullable), CheckOutAt (nullable), CreatedAt |
-| VO | **Visitor** | Identifies the non-resident person. FullName `[PII]` non-empty; DocumentNumber `[PII]` (optional); VehiclePlate (optional) | FullName, DocumentNumber, VehiclePlate |
-| VO | **VisitStatus** | One of {Registered, CheckedIn, CheckedOut}. Transitions: Registered → CheckedIn → CheckedOut. | StatusValue |
+| AR | **Visit** | Must reference a valid Building within the Manager's assigned buildings and same Tenant; ScheduledDate must be in the future for Scheduled visits (or today for immediate start); lifecycle: Scheduled → InProgress → Completed; cannot be Completed until all ChecklistItems are resolved | VisitId, TenantId, BuildingId, ManagerId, Status (VO), ScheduledDate, StartedAt (nullable), CompletedAt (nullable), Notes (free-text observations), CreatedAt, DeletedAt (soft-delete) |
+| E | **ChecklistItem** | Must belong to a Visit; Status must be Checked, NotApplicable, or Issue; if Issue, a linked FollowUpAction should be created | ChecklistItemId, VisitId, Category (VO), Description, Status (VO), Notes (nullable) |
+| E | **FollowUpAction** | Must belong to a Visit; Description non-empty; may optionally link to an IncidentId (if an Incident was created from this action); Status: Open or Done | FollowUpActionId, VisitId, Description, Status (VO), LinkedIncidentId (nullable), DueDate (nullable), CompletedAt (nullable) |
+| VO | **VisitStatus** | One of {Scheduled, InProgress, Completed}. Transitions: Scheduled → InProgress → Completed. Scheduled → Completed (direct close, e.g., cancelled visit with notes). | StatusValue |
+| VO | **ChecklistItemStatus** | One of {Pending, Checked, NotApplicable, Issue}. | StatusValue |
+| VO | **ChecklistCategory** | One of {Facilities, Cleanliness, Security, Elevators, CommonAreas, Parking, Garden, Other}. Extensible. | CategoryValue |
+| VO | **FollowUpStatus** | One of {Open, Done}. | StatusValue |
 
-**LGPD Note:** Visitor.FullName and Visitor.DocumentNumber are PII. Apply the same pseudonymization approach as Resident Registry after the applicable retention period.
+**Note:** Visit no longer involves external visitors entering the building. It represents the Manager's own site visit — an inspection of the building as part of their professional duties.
 
 ---
 
@@ -317,13 +321,18 @@ graph TD
 | `RevokeDocumentAccess` | Revoke an active Access Grant | Grant must exist; idempotent if already revoked | Document |
 | `DeleteDocument` | Soft-delete a Document | Document must have no active grants OR manager confirms revoke-all | Document |
 
-### BC-06: Visit Registration
+### BC-06: Visit (Site Inspection)
 
 | Command | Intent | Key Validations | Target Aggregate |
 |---|---|---|---|
-| `RegisterVisit` | Log a planned or arrived visitor | Building, Unit, AuthorizingResident must be valid and active within same Tenant; Visitor.FullName non-empty | Visit |
-| `CheckInVisitor` | Record visitor physical arrival | Visit must be in Registered status | Visit |
-| `CheckOutVisitor` | Record visitor departure | Visit must be in CheckedIn status; CheckOutAt >= CheckInAt | Visit |
+| `ScheduleVisit` | Schedule a future site visit to a Building | Building must be active and within Manager's assigned buildings; ScheduledDate must be today or in the future | Visit |
+| `StartVisit` | Begin a site visit (transition to InProgress) | Visit must be in Scheduled status; populates StartedAt | Visit |
+| `AddChecklistItem` | Add an inspection item to an active Visit | Visit must be InProgress; Category and Description non-empty | Visit (ChecklistItem child) |
+| `ResolveChecklistItem` | Mark a checklist item as Checked, NotApplicable, or Issue | Visit must be InProgress; ChecklistItem must be Pending | Visit (ChecklistItem child) |
+| `AddFollowUpAction` | Create a follow-up action from the Visit | Visit must be InProgress or Completed; Description non-empty | Visit (FollowUpAction child) |
+| `LinkFollowUpToIncident` | Associate a follow-up action with an Incident | FollowUpAction must exist; Incident must be in same Tenant and Building | Visit (FollowUpAction child) |
+| `CompleteFollowUpAction` | Mark a follow-up action as Done | FollowUpAction must be Open | Visit (FollowUpAction child) |
+| `CompleteVisit` | Finish the site visit (transition to Completed) | Visit must be InProgress; all ChecklistItems must be resolved (not Pending); populates CompletedAt | Visit |
 
 ### BC-07: Incident
 
@@ -363,7 +372,7 @@ graph TD
 | `ResidentRegistered` | A new Resident has been created | Resident Registry | Announcement (for audience resolution), Visit (for authorization) | ResidentId, TenantId, BuildingId, UnitId, Role, OccurredAt |
 | `ResidentInvited` | An invite token was generated and dispatched | Resident Registry | (Notification service — future) | ResidentId, TenantId, InviteTokenExpiry, OccurredAt |
 | `ResidentActivated` | A Resident transitioned to Active status | Resident Registry | — | ResidentId, TenantId, OccurredAt |
-| `ResidentMovedOut` | A Resident's occupancy has ended | Resident Registry | LGPD Retention Job (start retention clock), Visit (close open visits) | ResidentId, TenantId, UnitId, MoveOutDate, OccurredAt |
+| `ResidentMovedOut` | A Resident's occupancy has ended | Resident Registry | LGPD Retention Job (start retention clock) | ResidentId, TenantId, UnitId, MoveOutDate, OccurredAt |
 | `ResidentPIIErased` | PII fields for a Resident have been pseudonymized | Resident Registry | Audit / Compliance | ResidentId, TenantId, ErasedFields[], OccurredAt |
 
 ### BC-04: Announcement
@@ -382,13 +391,14 @@ graph TD
 | `DocumentShared` | An Access Grant was created | Document | (Notification service — future) | DocumentId, TenantId, GrantId, GranteeType, GranteeId, OccurredAt |
 | `DocumentAccessRevoked` | An Access Grant was revoked | Document | — | DocumentId, TenantId, GrantId, GranteeType, GranteeId, RevokedAt, OccurredAt |
 
-### BC-06: Visit Registration
+### BC-06: Visit (Site Inspection)
 
 | Event | Meaning | Producer | Consumer(s) | Key Payload Fields |
 |---|---|---|---|---|
-| `VisitRegistered` | A Visit was logged | Visit | — | VisitId, TenantId, BuildingId, UnitId, AuthorizingResidentId, OccurredAt |
-| `VisitorCheckedIn` | A Visitor physically arrived | Visit | — | VisitId, TenantId, BuildingId, CheckInAt, OccurredAt |
-| `VisitorCheckedOut` | A Visitor departed | Visit | LGPD Retention Job (visitor PII) | VisitId, TenantId, BuildingId, CheckOutAt, OccurredAt |
+| `VisitScheduled` | A site visit was scheduled | Visit | — | VisitId, TenantId, BuildingId, ManagerId, ScheduledDate, OccurredAt |
+| `VisitStarted` | A Manager began a site visit | Visit | — | VisitId, TenantId, BuildingId, ManagerId, StartedAt, OccurredAt |
+| `VisitCompleted` | A Manager completed a site visit | Visit | Analytics | VisitId, TenantId, BuildingId, ManagerId, CompletedAt, ChecklistItemCount, IssueCount, FollowUpCount, OccurredAt |
+| `FollowUpActionCreated` | A follow-up action was created from a visit | Visit | Incident (if linked) | FollowUpActionId, VisitId, TenantId, BuildingId, Description, LinkedIncidentId (nullable), OccurredAt |
 
 ### BC-07: Incident
 
@@ -485,34 +495,42 @@ Manager         File Storage Abstraction    BC-05 Document
 
 ---
 
-### W-04: Visit Check-In / Check-Out
+### W-04: Manager Site Visit (Inspection)
 
 ```
-Manager           BC-06 Visit Registration       BC-03 Resident Registry (validation)
-  |                       |                              |
-  |--[RegisterVisit]------>|                              |
-  |   (BuildingId,         |--[validate Resident active]->|
-  |    UnitId,             |<--[OK]----------------------|
-  |    ResidentId,         |  (store: status=Registered)  |
-  |    Visitor)            |  [VisitRegistered event]     |
-  |<--[VisitId]------------|                              |
-  |                        |                              |
-  |--[CheckInVisitor]------>|                              |
-  |   (VisitId)            |  (status: Registered → CheckedIn)
-  |                        |  [VisitorCheckedIn event]    |
-  |<--[OK]-----------------|                              |
-  |                        |                              |
-  |--[CheckOutVisitor]----->|                              |
-  |   (VisitId)            |  (status: CheckedIn → CheckedOut)
-  |                        |  [VisitorCheckedOut event]   |
-  |<--[OK]-----------------|                              |
+Manager           BC-06 Visit              BC-02 Building Mgmt      BC-07 Incident
+  |                    |                          |                      |
+  |--[ScheduleVisit]-->|                          |                      |
+  |   (BuildingId,     |--[validate Building]--->|                      |
+  |    ScheduledDate)  |<--[OK]------------------|                      |
+  |                    |  (store: status=Scheduled)                     |
+  |                    |  [VisitScheduled event]                        |
+  |<--[VisitId]--------|                                                |
+  |                    |                                                |
+  |--[StartVisit]----->|                                                |
+  |                    |  (status: Scheduled → InProgress)              |
+  |                    |  [VisitStarted event]                          |
+  |<--[OK]-------------|                                                |
+  |                    |                                                |
+  |--[AddChecklistItem]>  (add items as manager inspects)               |
+  |--[ResolveItem]--->|  (Checked / NotApplicable / Issue)             |
+  |                    |                                                |
+  |--[AddFollowUpAction]> (create action for issues found)              |
+  |                    |                                                |
+  |--[LinkFollowUpToIncident]----------->  (optionally create/link)--->|
+  |                    |                                                |
+  |--[CompleteVisit]-->|                                                |
+  |                    |  (validate: all items resolved)                |
+  |                    |  (status: InProgress → Completed)              |
+  |                    |  [VisitCompleted event]                        |
+  |<--[OK]-------------|                                                |
 ```
 
 **Edge cases:**
-- AuthorizingResident is MovedOut at visit registration time → reject with `ResidentNotActive`.
-- CheckIn on an already CheckedIn visit → reject with `InvalidStatusTransition`.
-- CheckOut with CheckOutAt < CheckInAt → reject with `InvalidCheckOutTime`.
-- Building does not belong to Manager's Tenant → rejected at authorization layer.
+- Building is not in Manager's assigned buildings → rejected at authorization layer.
+- CompleteVisit with unresolved (Pending) checklist items → reject with `UnresolvedChecklistItems`.
+- StartVisit on an already InProgress visit → reject with `InvalidStatusTransition`.
+- ScheduleVisit for a deactivated Building → reject with `BuildingNotActive`.
 
 ---
 
@@ -561,24 +579,21 @@ Manager                         BC-07 Incident
 |---|---|---|
 | IAM | Manager | Email, FullName |
 | Resident Registry | Resident | FullName, Email, Phone, DocumentNumber |
-| Visit | Visit | Visitor.FullName, Visitor.DocumentNumber |
 
 **Erasure protocol:**
-1. Right-to-erasure request arrives for a ResidentId or VisitorId.
-2. System verifies there is no active legal hold (e.g., open Incident referencing the Resident — ⚠️ HYPOTHESIS — validate legal hold rules with legal team).
+1. Right-to-erasure request arrives for a ResidentId.
+2. System verifies there is no active legal hold — erasure is blocked if any open or in-progress Incident references the Resident. The Manager is notified to resolve incidents first. (A3 — RESOLVED)
 3. PII fields are replaced with a pseudonym token (e.g., `[ERASED-{hash}]`), preserving referential integrity for audit records.
 4. `ResidentPIIErased` event is emitted for compliance log.
 5. Physical deletion of the row is NOT performed — the soft-deleted record with pseudonymized data is retained for the audit trail.
 
 **Data retention:**
-- Resident PII: retained for 30 days after MoveOutDate (⚠️ HYPOTHESIS).
-- Visitor PII: retained for 30 days after CheckOutAt (⚠️ HYPOTHESIS).
-- Initiation of the retention clock is triggered by `ResidentMovedOut` and `VisitorCheckedOut` events.
+- Resident PII: retained for 5 years after MoveOutDate. (A2 — RESOLVED)
+- Initiation of the retention clock is triggered by the `ResidentMovedOut` event.
 
 ### 8.3 Soft Delete Pattern
 
-- All aggregates except Visit use soft delete (`DeletedAt` timestamp).
-- Visit records are append-only and not soft-deleted (they are immutable log entries).
+- All aggregates use soft delete (`DeletedAt` timestamp).
 - A soft-deleted entity MUST NOT appear in any active-record query.
 - Soft-deleted records ARE included in audit/history queries.
 - The physical row is never deleted by application code. Deletion, if ever required, goes through the LGPD erasure workflow.
@@ -611,7 +626,7 @@ Manager                         BC-07 Incident
 |---|---|---|
 | Building Management → Resident Registry (Unit validity check) | Synchronous query (read from Building context) | Strong — must be valid at command time |
 | Resident Registry → Announcement (audience resolution at publish) | Synchronous query (read from Resident Registry) | Strong — must resolve non-empty audience at publish time |
-| Resident Registry → Visit (Resident active check) | Synchronous query | Strong — must be active at visit registration time |
+| Building Management → Visit (Building validity check) | Synchronous query (read from Building context) | Strong — Building must be active at visit scheduling time |
 | Domain events → Notification service (future) | Asynchronous (event-driven) | Eventual |
 | Domain events → Analytics (future) | Asynchronous (event-driven) | Eventual |
 | `ResidentMovedOut` → LGPD retention job | Asynchronous (event-driven, scheduled) | Eventual (within retention window) |
@@ -631,7 +646,7 @@ Manager                         BC-07 Incident
 |---|---|---|
 | RegisterResident — Unit capacity check | Strong | Prevents double-assignment at command time |
 | PublishAnnouncement — audience resolution | Strong | Must not publish to empty audience |
-| RegisterVisit — Resident active check | Strong | Security requirement |
+| ScheduleVisit — Building active check | Strong | Cannot inspect a deactivated building |
 | Notification delivery after AnnouncementPublished | Eventual | Acceptable delay; delivery is best-effort in MVP |
 | Analytics aggregations | Eventual | Read-only, delay acceptable |
 | LGPD retention window processing | Eventual (bounded) | Must complete within defined window |
@@ -647,8 +662,8 @@ Manager                         BC-07 Incident
 3. **A3 [Legal] — RESOLVED: Block erasure + notify manager.** PII cannot be pseudonymized while any referencing Incident is in an open or in-progress state. The system notifies the building manager that they must resolve open incidents before the erasure can proceed.
 4. **A4 [Product] — RESOLVED: 72-hour expiry.** Invitation tokens expire after 72 hours. Expired tokens can be re-issued by the manager.
 5. **A5 [Product] — RESOLVED: Visible to all tenant managers.** Announcement drafts are visible to and editable by all Managers within the same Tenant. No per-manager draft isolation.
-6. **A6 [Product] — RESOLVED: Allow walk-ins.** A Manager can check in a Visitor directly without prior registration. RegisterVisit and CheckIn happen in a single operation. The Visit record is created and immediately transitions to CheckedIn status.
-7. **A7 [Product] — RESOLVED: Auto-close + notify.** When a Resident moves out, all their open Visits (checked-in but not checked-out) are automatically closed. The system notifies the manager that these Visits were force-closed due to the move-out.
+6. **A6 [Product] — SUPERSEDED.** Original question about walk-in visitors is no longer applicable. Visit now represents the Manager's own site inspection of a Building, not external visitor tracking. External visitor tracking is out of scope.
+7. **A7 [Product] — SUPERSEDED.** Original question about auto-closing visits on resident move-out is no longer applicable. Visits are now Manager site inspections, not linked to Residents.
 
 **Architecture follow-up:**
 
@@ -671,7 +686,7 @@ Manager                         BC-07 Incident
 
 ### To Spec & Contract Agent (API Design)
 
-- **7 bounded contexts**, each maps to a logical API resource group: `/buildings`, `/units`, `/residents`, `/announcements`, `/documents`, `/visits`, `/incidents`.
+- **7 bounded contexts**, each maps to a logical API resource group: `/buildings`, `/units`, `/residents`, `/announcements`, `/documents`, `/visits` (manager site inspections), `/incidents`.
 - All endpoints require JWT Bearer auth. TenantId and ManagerId are extracted from claims — never accepted from the request body.
 - **Commands map directly to POST/PUT/PATCH endpoints** — see Section 5 for all commands and their validations.
 - **AudienceSpecification** (Announcement) must be represented as a discriminated union in the API schema: `{ scope: "BuildingWide" | "UnitLevel" | "Individual", buildingId, unitIds?, residentIds? }`.
