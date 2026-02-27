@@ -29,7 +29,7 @@ jobs:
           node-version: "20"
 
       - name: Install log4brains
-        run: npm install -g log4brains
+        run: npm install -g log4brains@0.8.5
 
       - name: Build static site
         run: log4brains build --basePath /em2devs-apps-building-management/decisions
