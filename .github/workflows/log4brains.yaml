@@ -36,9 +36,8 @@ jobs:
 
       - name: Fix client-side routing for subdirectory deployment
         run: |
-          BASE_PATH="/em2devs-apps-building-management/decisions"
           find .log4brains/out -name '*.html' -exec sed -i \
-            "s/\"buildId\":/\"basePath\":\"$BASE_PATH\",\"buildId\":/g" {} +
+            's|"buildId":|"basePath":"/em2devs-apps-building-management/decisions","buildId":|g' {} +
 
       - name: Stage Pages content under /decisions
         run: |
