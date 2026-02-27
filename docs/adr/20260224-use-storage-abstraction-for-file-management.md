@@ -1,13 +1,9 @@
 # Use Storage Abstraction for File Management
 
-## Status
-
-* Status: accepted
-
-## Use an interface-based storage abstraction with local filesystem for MVP and Azure Blob Storage as the target production provider
-
-* Deciders: Development team
-* Date: 2026-02-24
+- Status: accepted
+- Deciders: Development team
+- Date: 2026-02-24
+- Tags: infrastructure, file-storage
 
 Technical Story: The Document Management epic (E-005) requires file upload and controlled sharing. The system must start with local filesystem storage for MVP simplicity and migrate to Azure Blob Storage for production without changing domain or application code.
 
@@ -126,5 +122,5 @@ The domain stores a `StorageReference` on the `Document` entity — it is opaque
 
 ## Links
 
-* Refines [ADR-0001](0001-use-clean-architecture.md) — storage interface in Application layer, implementations in Infrastructure layer
-* Related to [ADR-0002](0002-use-ef-core-with-postgresql-for-persistence.md) — Document metadata stored in PostgreSQL, file content stored via IFileStorageService
+- Refines [Use Clean Architecture](20260224-use-clean-architecture.md) — storage interface in Application layer, implementations in Infrastructure layer
+- Related to [Use EF Core with PostgreSQL for Persistence](20260224-use-ef-core-with-postgresql-for-persistence.md) — Document metadata stored in PostgreSQL, file content stored via IFileStorageService

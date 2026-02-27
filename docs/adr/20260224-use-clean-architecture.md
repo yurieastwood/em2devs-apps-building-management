@@ -1,13 +1,11 @@
 # Use Clean Architecture
 
-## Status
+- Status: accepted
+- Deciders: Development team
+- Date: 2026-02-24
+- Tags: architecture
 
-* Status: accepted
-
-## Use Clean Architecture to organize the solution into layered projects with explicit dependency rules
-
-* Deciders: Development team
-* Date: 2026-02-24
+Technical Story: Use Clean Architecture to organize the solution into layered projects with explicit dependency rules
 
 ## Context and Problem Statement
 
@@ -93,6 +91,6 @@ Infrastructure references Application (to implement its interfaces) and Domain (
 
 ## Links
 
-* Refined by [ADR-0002](0002-use-ef-core-with-postgresql-for-persistence.md)
-* Refined by [ADR-0003](0003-use-asp.net-core-identity-with-jwt-bearer-for-authentication.md)
-* Refined by [ADR-0004](0004-use-storage-abstraction-for-file-management.md)
+- Refined by [Use EF Core with PostgreSQL for Persistence](20260224-use-ef-core-with-postgresql-for-persistence.md)
+- Refined by [Use ASP.NET Core Identity with JWT Bearer for Authentication](20260224-use-asp-net-core-identity-with-jwt-bearer-for-authentication.md)
+- Refined by [Use Storage Abstraction for File Management](20260224-use-storage-abstraction-for-file-management.md)

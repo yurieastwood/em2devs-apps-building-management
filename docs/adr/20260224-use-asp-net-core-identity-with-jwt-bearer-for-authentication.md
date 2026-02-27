@@ -1,13 +1,9 @@
 # Use ASP.NET Core Identity with JWT Bearer for Authentication
 
-## Status
-
-* Status: accepted
-
-## Use ASP.NET Core Identity for user management and JWT Bearer tokens for API authentication in a manager-only MVP
-
-* Deciders: Development team
-* Date: 2026-02-24
+- Status: accepted
+- Deciders: Development team
+- Date: 2026-02-24
+- Tags: authentication, security
 
 Technical Story: The multi-tenant Building Management system needs authentication that supports role-based access control, multi-tenant isolation via token claims, and a stateless API design suitable for horizontal scaling.
 
@@ -106,5 +102,5 @@ Chosen option: "ASP.NET Core Identity + JWT Bearer tokens", because it provides 
 
 ## Links
 
-* Refines [ADR-0001](0001-use-clean-architecture.md) — auth middleware lives in API layer, Identity implementation in Infrastructure layer
-* Related to [ADR-0002](0002-use-ef-core-with-postgresql-for-persistence.md) — Identity tables share the PostgreSQL database
+- Refines [Use Clean Architecture](20260224-use-clean-architecture.md) — auth middleware lives in API layer, Identity implementation in Infrastructure layer
+- Related to [Use EF Core with PostgreSQL for Persistence](20260224-use-ef-core-with-postgresql-for-persistence.md) — Identity tables share the PostgreSQL database
