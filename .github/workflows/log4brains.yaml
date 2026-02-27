@@ -34,6 +34,17 @@ jobs:
       - name: Build static site
         run: log4brains build --basePath /em2devs-apps-building-management/decisions
 
+      - name: Fix client-side routing for subdirectory deployment
+        run: |
+          # log4brains uses Next.js 10.2 whose `next export` sets assetPrefix but
+          # omits basePath from __NEXT_DATA__, leaving router.basePath empty.
+          # This causes runtime data fetches (ADR list, search index) to 404 when
+          # the site is served from a subdirectory.  Injecting basePath into
+          # __NEXT_DATA__ restores correct client-side routing.
+          BASE_PATH="/em2devs-apps-building-management/decisions"
+          find .log4brains/out -name '*.html' -exec sed -i \
+            "s/\"buildId\":/\"basePath\":\"${BASE_PATH}\",\"buildId\":/g" {} +
+
       - name: Stage Pages content under /decisions
         run: |
           rm -rf _pages
