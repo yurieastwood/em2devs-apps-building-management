@@ -34,10 +34,16 @@ jobs:
       - name: Build static site
         run: log4brains build --basePath /em2devs-apps-building-management/decisions
 
+      - name: Stage Pages content under /decisions
+        run: |
+          rm -rf _pages
+          mkdir -p _pages/decisions
+          cp -R .log4brains/out/. _pages/decisions/
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .log4brains/out
+          path: _pages
 
   deploy:
     name: Deploy to GitHub Pages
