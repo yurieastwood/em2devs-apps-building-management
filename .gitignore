@@ -187,3 +187,6 @@ ScaffoldingReadMe.txt
 
 # dotnet tools
 .config/dotnet-tools.json
+
+# Log4brains
+.log4brains/

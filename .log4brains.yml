@@ -1,0 +1,4 @@
+project:
+  name: EM2Devs Building Management
+  tz: America/Chicago
+  adrFolder: ./docs/adr

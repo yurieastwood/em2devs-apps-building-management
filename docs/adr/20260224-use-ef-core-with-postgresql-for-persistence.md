@@ -1,13 +1,9 @@
 # Use EF Core with PostgreSQL for Persistence
 
-## Status
-
-* Status: accepted
-
-## Use Entity Framework Core with PostgreSQL as the persistence layer with shared-schema multi-tenancy
-
-* Deciders: Development team
-* Date: 2026-02-24
+- Status: accepted
+- Deciders: Development team
+- Date: 2026-02-24
+- Tags: persistence, infrastructure
 
 Technical Story: The system requires a relational database to support the highly relational domain model (Buildings > Units > Residents, cross-entity audience targeting, multi-tenant data isolation, LGPD compliance).
 
@@ -114,4 +110,4 @@ Chosen option: "EF Core + PostgreSQL (shared schema, TenantId discriminator)", b
 
 ## Links
 
-* Refines [ADR-0001](0001-use-clean-architecture.md) — persistence lives in the Infrastructure layer
+- Refines [Use Clean Architecture](20260224-use-clean-architecture.md) — persistence lives in the Infrastructure layer
