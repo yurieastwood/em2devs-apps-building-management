@@ -2,11 +2,19 @@
   <Target Name="HuskyRestore"
           BeforeTargets="Restore"
           Condition="'$(HUSKY)' != '0'"
-          Inputs="$(MSBuildThisFileFullPath)"
+          Inputs="$(MSBuildThisFileFullPath);$(MSBuildThisFileDirectory).config\dotnet-tools.json;$(MSBuildThisFileDirectory).husky\**\*"
           Outputs="$(MSBuildThisFileDirectory)husky.restore.stamp">
-    <Exec Command="dotnet tool restore" StandardOutputImportance="Low" StandardErrorImportance="High" />
-    <Exec Command="dotnet husky install" StandardOutputImportance="Low" StandardErrorImportance="High"
-          WorkingDirectory="$(MSBuildThisFileDirectory)" />
-    <Touch Files="$(MSBuildThisFileDirectory)husky.restore.stamp" />
+    <Exec Command="dotnet tool restore"
+          StandardOutputImportance="Low"
+          StandardErrorImportance="High"
+          WorkingDirectory="$(MSBuildThisFileDirectory)"
+          Condition="!Exists('$(MSBuildThisFileDirectory)husky.restore.stamp')" />
+    <Exec Command="dotnet husky install"
+          StandardOutputImportance="Low"
+          StandardErrorImportance="High"
+          WorkingDirectory="$(MSBuildThisFileDirectory)"
+          Condition="!Exists('$(MSBuildThisFileDirectory)husky.restore.stamp')" />
+    <Touch Files="$(MSBuildThisFileDirectory)husky.restore.stamp"
+           Condition="!Exists('$(MSBuildThisFileDirectory)husky.restore.stamp')" />
   </Target>
 </Project>
