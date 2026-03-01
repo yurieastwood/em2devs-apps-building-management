@@ -107,7 +107,7 @@
   <Target Name="HuskyRestore"
           BeforeTargets="Restore"
           Condition="'$(HUSKY)' != '0'"
-          Inputs="$(MSBuildThisFileFullPath);$(MSBuildThisFileDirectory).config\dotnet-tools.json;$(MSBuildThisFileDirectory).husky\**\*"
+          Inputs="$(MSBuildThisFileFullPath);$(MSBuildThisFileDirectory).config/dotnet-tools.json;$(MSBuildThisFileDirectory).husky/**/*"
           Outputs="$(MSBuildThisFileDirectory)husky.restore.stamp">
     <HuskyRestoreTask WorkingDirectory="$(MSBuildThisFileDirectory)"
                      StampFile="$(MSBuildThisFileDirectory)husky.restore.stamp" />
