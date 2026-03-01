@@ -1,8 +1,12 @@
 <Project>
-  <Target Name="HuskyRestore" BeforeTargets="Restore;CollectPackageReferences"
-          Condition="'$(HUSKY)' != '0'">
+  <Target Name="HuskyRestore"
+          BeforeTargets="Restore"
+          Condition="'$(HUSKY)' != '0'"
+          Inputs="$(MSBuildThisFileFullPath)"
+          Outputs="$(MSBuildThisFileDirectory)husky.restore.stamp">
     <Exec Command="dotnet tool restore" StandardOutputImportance="Low" StandardErrorImportance="High" />
     <Exec Command="dotnet husky install" StandardOutputImportance="Low" StandardErrorImportance="High"
           WorkingDirectory="$(MSBuildThisFileDirectory)" />
+    <Touch Files="$(MSBuildThisFileDirectory)husky.restore.stamp" />
   </Target>
 </Project>
