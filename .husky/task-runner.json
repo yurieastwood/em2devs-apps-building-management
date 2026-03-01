@@ -1,0 +1,44 @@
+{
+  "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
+  "tasks": [
+    {
+      "name": "commit-message-linter",
+      "command": "bash",
+      "args": [".husky/csx/commit-lint.sh", "${args}"],
+      "group": "commit-msg",
+      "windows": {
+        "command": "bash",
+        "args": [".husky/csx/commit-lint.sh", "${args}"]
+      }
+    },
+    {
+      "name": "branch-name-linter",
+      "command": "bash",
+      "args": [".husky/csx/branch-lint.sh"],
+      "group": "pre-push",
+      "windows": {
+        "command": "bash",
+        "args": [".husky/csx/branch-lint.sh"]
+      }
+    },
+    {
+      "name": "dotnet-format",
+      "command": "dotnet",
+      "args": ["format", "--verify-no-changes", "--verbosity", "quiet"],
+      "group": "pre-commit",
+      "include": ["**/*.cs"]
+    },
+    {
+      "name": "dotnet-build",
+      "command": "dotnet",
+      "args": ["build", "-c", "Release", "--nologo", "-v", "q"],
+      "group": "pre-commit"
+    },
+    {
+      "name": "dotnet-test",
+      "command": "dotnet",
+      "args": ["test", "-c", "Release", "--no-build", "--nologo", "-v", "q"],
+      "group": "pre-commit"
+    }
+  ]
+}

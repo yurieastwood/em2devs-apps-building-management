@@ -185,8 +185,5 @@ ScaffoldingReadMe.txt
 # Test results and coverage reports
 [Tt]est[Rr]esults/
 
-# dotnet tools
-.config/dotnet-tools.json
-
 # Log4brains
 .log4brains/

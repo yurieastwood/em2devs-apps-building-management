@@ -9,7 +9,85 @@ on:
 permissions:
   contents: read
 
+env:
+  HUSKY: 0
+
 jobs:
+  lint-commit:
+    name: Lint Commit Messages
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate PR commit messages
+        run: |
+          pattern="^(feat|fix|build|chore|ci|docs|style|refactor|perf|test)(\(.+\))?!?: .{1,}"
+          failed=0
+
+          while IFS= read -r msg; do
+            if echo "$msg" | grep -qE "^(Merge |Revert |Initial commit|fixup! |squash! )"; then
+              continue
+            fi
+
+            if ! echo "$msg" | grep -qE "$pattern"; then
+              echo "::error::Invalid commit message: $msg"
+              failed=1
+            fi
+          done < <(git log --format='%s' origin/${{ github.base_ref }}..HEAD)
+
+          if [ "$failed" -eq 1 ]; then
+            echo ""
+            echo "Expected format: <type>[optional scope]: <description>"
+            echo "Valid types: feat, fix, build, chore, ci, docs, style, refactor, perf, test"
+            exit 1
+          fi
+
+  lint-branch:
+    name: Lint Branch Name
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate branch name
+        run: |
+          branch="${{ github.head_ref }}"
+          pattern="^(main|feat|fix|hotfix|release|chore)/.+"
+
+          if echo "$branch" | grep -qE "^(main|master|develop|dev)$"; then
+            exit 0
+          fi
+
+          if ! echo "$branch" | grep -qE "$pattern"; then
+            echo "::error::Invalid branch name: $branch"
+            echo ""
+            echo "Expected format: <type>/<description>"
+            echo "Valid types: main, feat, fix, hotfix, release, chore"
+            exit 1
+          fi
+
+  lint-format:
+    name: Check Formatting
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+          dotnet-quality: preview
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Check formatting
+        run: dotnet format --verify-no-changes --verbosity diagnostic
+
   build:
     name: Build
     runs-on: ubuntu-latest
