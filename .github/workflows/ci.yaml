@@ -25,7 +25,13 @@ jobs:
 
       - name: Validate PR commit messages
         run: |
-          pattern="^(feat|fix|build|chore|ci|docs|style|refactor|perf|test)(\(.+\))?!?: .{1,}"
+          # Try to reuse the Conventional Commits pattern from the Husky hook to avoid duplication.
+          pattern="$(sed -n 's/^pattern="\([^"]*\)".*/\1/p' .husky/csx/commit-lint.sh 2>/dev/null | head -n 1)"
+
+          # Fallback to the current hardcoded pattern if we couldn't extract it from the Husky script.
+          if [ -z "$pattern" ]; then
+            pattern="^(feat|fix|build|chore|ci|docs|style|refactor|perf|test)(\(.+\))?!?: .{1,}"
+          fi
           failed=0
 
           while IFS= read -r msg; do
