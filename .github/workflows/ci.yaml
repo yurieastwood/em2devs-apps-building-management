@@ -62,7 +62,10 @@ jobs:
           fi
 
           if ! echo "$branch" | grep -qE "$pattern"; then
-            echo "::error::Invalid branch name: $branch"
+            escaped_branch="${branch//'%'/'%25'}"
+            escaped_branch="${escaped_branch//$'\n'/'%0A'}"
+            escaped_branch="${escaped_branch//$'\r'/'%0D'}"
+            echo "::error::Invalid branch name: $escaped_branch"
             echo ""
             echo "Expected format: <type>/<description>"
             echo "Valid types: main, feat, fix, hotfix, release, chore"
