@@ -40,7 +40,10 @@ jobs:
             fi
 
             if ! echo "$msg" | grep -qE "$pattern"; then
-              echo "::error::Invalid commit message: $msg"
+              encoded_msg="${msg//%/%25}"
+              encoded_msg="${encoded_msg//$'\r'/%0D}"
+              encoded_msg="${encoded_msg//$'\n'/%0A}"
+              echo "::error::Invalid commit message: $encoded_msg"
               failed=1
             fi
           done < <(git log --format='%s' origin/${{ github.base_ref }}..HEAD)
