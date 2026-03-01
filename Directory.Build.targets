@@ -11,6 +11,7 @@
       <Using Namespace="System" />
       <Using Namespace="System.Diagnostics" />
       <Using Namespace="System.IO" />
+      <Using Namespace="System.Text" />
       <Code Type="Fragment" Language="cs"><![CDATA[
         try
         {
@@ -38,32 +39,44 @@
                 // Once we hold the lock, check again in case another node finished the work.
                 if (!File.Exists(stampFile))
                 {
-                    int RunProcess(string fileName, string arguments)
+                    int RunProcess(string fileName, string arguments, out string output)
                     {
+                        var sb = new StringBuilder();
                         var psi = new ProcessStartInfo
                         {
                             FileName = fileName,
                             Arguments = arguments,
                             WorkingDirectory = workingDir,
-                            UseShellExecute = false
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true
                         };
 
                         using (var proc = Process.Start(psi))
                         {
+                            proc.OutputDataReceived += (s, e) => { if (e.Data != null) sb.AppendLine(e.Data); };
+                            proc.ErrorDataReceived  += (s, e) => { if (e.Data != null) sb.AppendLine(e.Data); };
+                            proc.BeginOutputReadLine();
+                            proc.BeginErrorReadLine();
                             proc.WaitForExit();
+                            output = sb.ToString();
                             return proc.ExitCode;
                         }
                     }
 
                     // Run `dotnet tool restore`.
-                    if (RunProcess("dotnet", "tool restore") != 0)
+                    string toolRestoreOutput;
+                    if (RunProcess("dotnet", "tool restore", out toolRestoreOutput) != 0)
                     {
+                        Log.LogError("'dotnet tool restore' failed.{0}{1}", Environment.NewLine, toolRestoreOutput);
                         return false;
                     }
 
                     // Run `dotnet husky install`.
-                    if (RunProcess("dotnet", "husky install") != 0)
+                    string huskyInstallOutput;
+                    if (RunProcess("dotnet", "husky install", out huskyInstallOutput) != 0)
                     {
+                        Log.LogError("'dotnet husky install' failed.{0}{1}", Environment.NewLine, huskyInstallOutput);
                         return false;
                     }
 
@@ -83,9 +96,9 @@
 
             return true;
         }
-        catch
+        catch (Exception ex)
         {
-            // Let MSBuild know the task failed.
+            Log.LogErrorFromException(ex, showStackTrace: true);
             return false;
         }
       ]]></Code>
