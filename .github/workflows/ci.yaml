@@ -94,8 +94,11 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
       - name: Check formatting
-        run: dotnet format --verify-no-changes --verbosity diagnostic
+        run: dotnet tool run dotnet-format --verify-no-changes --verbosity diagnostic
 
   build:
     name: Build
