@@ -31,13 +31,13 @@
     {
       "name": "dotnet-build",
       "command": "dotnet",
-      "args": ["build", "-c", "Release", "--nologo", "-v", "q"],
+      "args": ["build", "-c", "Release", "--nologo", "-v", "q", "--no-restore"],
       "group": "pre-commit"
     },
     {
       "name": "dotnet-test",
       "command": "dotnet",
-      "args": ["test", "-c", "Release", "--no-build", "--nologo", "-v", "q"],
+      "args": ["test", "-c", "Release", "--no-build", "--no-restore", "--nologo", "-v", "q"],
       "group": "pre-commit"
     }
   ]
