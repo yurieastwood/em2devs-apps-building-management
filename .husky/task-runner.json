@@ -3,21 +3,21 @@
   "tasks": [
     {
       "name": "commit-message-linter",
-      "command": "bash",
+      "command": "sh",
       "args": [".husky/csx/commit-lint.sh", "${args}"],
       "group": "commit-msg",
       "windows": {
-        "command": "bash",
+        "command": "sh",
         "args": [".husky/csx/commit-lint.sh", "${args}"]
       }
     },
     {
       "name": "branch-name-linter",
-      "command": "bash",
+      "command": "sh",
       "args": [".husky/csx/branch-lint.sh"],
       "group": "pre-push",
       "windows": {
-        "command": "bash",
+        "command": "sh",
         "args": [".husky/csx/branch-lint.sh"]
       }
     },
