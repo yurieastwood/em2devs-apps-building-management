@@ -1,0 +1,24 @@
+<Project>
+  <ItemGroup>
+    <HuskyInputs Include="$(MSBuildThisFileFullPath)" />
+    <HuskyInputs Include="$(MSBuildThisFileDirectory).config/dotnet-tools.json" />
+    <HuskyInputs Include="$(MSBuildThisFileDirectory).husky/task-runner.json" />
+    <HuskyInputs Include="$(MSBuildThisFileDirectory).husky/csx/**/*" />
+  </ItemGroup>
+  <Target Name="HuskyRestore"
+          BeforeTargets="Restore"
+          Condition="'$(HUSKY)' != '0'"
+          Inputs="@(HuskyInputs)"
+          Outputs="$(MSBuildThisFileDirectory)husky.restore.stamp">
+    <Exec Command="dotnet tool restore"
+          StandardOutputImportance="Low"
+          StandardErrorImportance="High"
+          WorkingDirectory="$(MSBuildThisFileDirectory)" />
+    <Exec Command="dotnet husky install"
+          StandardOutputImportance="Low"
+          StandardErrorImportance="High"
+          WorkingDirectory="$(MSBuildThisFileDirectory)" />
+    <Touch Files="$(MSBuildThisFileDirectory)husky.restore.stamp"
+           AlwaysCreate="true" />
+  </Target>
+</Project>
