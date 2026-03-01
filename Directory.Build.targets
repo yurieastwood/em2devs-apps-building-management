@@ -1,20 +1,102 @@
 <Project>
+  <UsingTask TaskName="HuskyRestoreTask"
+             TaskFactory="CodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <WorkingDirectory ParameterType="System.String" Required="true" />
+      <StampFile ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Reference Include="System.Core" />
+      <Using Namespace="System" />
+      <Using Namespace="System.Diagnostics" />
+      <Using Namespace="System.IO" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        try
+        {
+            var workingDir = WorkingDirectory;
+            var stampFile = StampFile;
+
+            // If the stamp already exists, nothing to do.
+            if (File.Exists(stampFile))
+            {
+                return true;
+            }
+
+            var lockFile = stampFile + ".lock";
+
+            // Ensure the directory for the lock and stamp files exists.
+            var lockDir = Path.GetDirectoryName(lockFile);
+            if (!string.IsNullOrEmpty(lockDir) && !Directory.Exists(lockDir))
+            {
+                Directory.CreateDirectory(lockDir);
+            }
+
+            // Acquire an exclusive lock by opening the file with no sharing.
+            using (var lockStream = new FileStream(lockFile, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+            {
+                // Once we hold the lock, check again in case another node finished the work.
+                if (!File.Exists(stampFile))
+                {
+                    int RunProcess(string fileName, string arguments)
+                    {
+                        var psi = new ProcessStartInfo
+                        {
+                            FileName = fileName,
+                            Arguments = arguments,
+                            WorkingDirectory = workingDir,
+                            UseShellExecute = false
+                        };
+
+                        using (var proc = Process.Start(psi))
+                        {
+                            proc.WaitForExit();
+                            return proc.ExitCode;
+                        }
+                    }
+
+                    // Run `dotnet tool restore`.
+                    if (RunProcess("dotnet", "tool restore") != 0)
+                    {
+                        return false;
+                    }
+
+                    // Run `dotnet husky install`.
+                    if (RunProcess("dotnet", "husky install") != 0)
+                    {
+                        return false;
+                    }
+
+                    // Create the stamp file to signal completion.
+                    var stampDir = Path.GetDirectoryName(stampFile);
+                    if (!string.IsNullOrEmpty(stampDir) && !Directory.Exists(stampDir))
+                    {
+                        Directory.CreateDirectory(stampDir);
+                    }
+
+                    using (File.Create(stampFile))
+                    {
+                        // Immediately dispose after creation.
+                    }
+                }
+            }
+
+            return true;
+        }
+        catch
+        {
+            // Let MSBuild know the task failed.
+            return false;
+        }
+      ]]></Code>
+    </Task>
+  </UsingTask>
   <Target Name="HuskyRestore"
           BeforeTargets="Restore"
           Condition="'$(HUSKY)' != '0'"
           Inputs="$(MSBuildThisFileFullPath);$(MSBuildThisFileDirectory).config\dotnet-tools.json;$(MSBuildThisFileDirectory).husky\**\*"
           Outputs="$(MSBuildThisFileDirectory)husky.restore.stamp">
-    <Exec Command="dotnet tool restore"
-          StandardOutputImportance="Low"
-          StandardErrorImportance="High"
-          WorkingDirectory="$(MSBuildThisFileDirectory)"
-          Condition="!Exists('$(MSBuildThisFileDirectory)husky.restore.stamp')" />
-    <Exec Command="dotnet husky install"
-          StandardOutputImportance="Low"
-          StandardErrorImportance="High"
-          WorkingDirectory="$(MSBuildThisFileDirectory)"
-          Condition="!Exists('$(MSBuildThisFileDirectory)husky.restore.stamp')" />
-    <Touch Files="$(MSBuildThisFileDirectory)husky.restore.stamp"
-           Condition="!Exists('$(MSBuildThisFileDirectory)husky.restore.stamp')" />
+    <HuskyRestoreTask WorkingDirectory="$(MSBuildThisFileDirectory)"
+                     StampFile="$(MSBuildThisFileDirectory)husky.restore.stamp" />
   </Target>
 </Project>
