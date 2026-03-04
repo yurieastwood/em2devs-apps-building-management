@@ -635,7 +635,7 @@ Manager                         BC-07 Incident
 
 | Complexity | Isolation Mechanism |
 |---|---|
-| File storage backend switching (Local → AzureBlob) | `IDocumentStorageService` interface in Document context. Domain holds only `StorageReference`. |
+| File storage backend switching (Local → AzureBlob) | `IFileStorageService` interface in Application layer (see [ADR-0004](adr/20260224-use-storage-abstraction-for-file-management.md)). Domain holds only `StorageReference`. |
 | Audience resolution logic | `AudienceResolver` domain service in Announcement context, querying Resident Registry. |
 | LGPD erasure workflow | Dedicated application service / background worker, not part of any aggregate. |
 | JWT claims extraction and TenantId resolution | IAM middleware / application layer. Never leaks into domain. |
@@ -700,7 +700,7 @@ Manager                         BC-07 Incident
 - **Multi-tenancy isolation** strategy is unresolved — recommend deciding between shared schema with TenantId discriminator (simpler) vs. schema-per-tenant (stronger isolation, more ops overhead). Domain model supports both.
 - **Strong consistency seams** (Section 9.2) that query across contexts synchronously — if contexts are eventually deployed as separate services, these become synchronous HTTP calls and introduce latency/coupling. For MVP (single deployment), this is acceptable.
 - **Outbox Pattern** is recommended for all domain event publication to avoid dual-write issues with PostgreSQL.
-- **File storage abstraction** (`IDocumentStorageService`) must be designed before Document context implementation. Interface contract is the only coupling point.
+- **File storage abstraction** (`IFileStorageService`, see [ADR-0004](adr/20260224-use-storage-abstraction-for-file-management.md)) must be designed before Document context implementation. Interface contract is the only coupling point.
 - **LGPD background worker** needs a reliable scheduling mechanism and idempotent design (may run multiple times on same record).
 - **Soft delete + PII pseudonymization** must both be supported — the infrastructure layer must handle this without conflating the two operations.
 - Recommend a single `CorrelationId` (trace ID) on all commands and events for distributed tracing readiness.
