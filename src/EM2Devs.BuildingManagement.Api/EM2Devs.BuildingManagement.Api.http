@@ -1,6 +1,76 @@
 @EM2Devs.BuildingManagement.Api_HostAddress = http://localhost:5286
 
-GET {{EM2Devs.BuildingManagement.Api_HostAddress}}/weatherforecast/
+### Authentication - Register
+POST {{EM2Devs.BuildingManagement.Api_HostAddress}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "fullName": "Admin User",
+  "password": "SecurePassword123!",
+  "confirmPassword": "SecurePassword123!"
+}
+
+### Authentication - Login
+POST {{EM2Devs.BuildingManagement.Api_HostAddress}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "SecurePassword123!"
+}
+
+### Buildings - Create
+POST {{EM2Devs.BuildingManagement.Api_HostAddress}}/buildings
+Content-Type: application/json
+
+{
+  "name": "Edifício Central",
+  "address": {
+    "street": "Rua Augusta",
+    "number": "1500",
+    "complement": "Bloco A",
+    "neighborhood": "Consolação",
+    "city": "São Paulo",
+    "state": "SP",
+    "postalCode": "01304-001",
+    "country": "BR"
+  },
+  "totalFloors": 20
+}
+
+### Buildings - List
+GET {{EM2Devs.BuildingManagement.Api_HostAddress}}/buildings?page=1&pageSize=20
 Accept: application/json
 
-###
+### Residents - Register
+POST {{EM2Devs.BuildingManagement.Api_HostAddress}}/residents
+Content-Type: application/json
+
+{
+  "buildingId": "00000000-0000-0000-0000-000000000001",
+  "unitId": "00000000-0000-0000-0000-000000000002",
+  "fullName": "Maria Silva",
+  "email": "maria@example.com",
+  "phone": "+5511999999999",
+  "documentNumber": "123.456.789-00",
+  "role": "Owner"
+}
+
+### Incidents - Report
+POST {{EM2Devs.BuildingManagement.Api_HostAddress}}/incidents
+Content-Type: application/json
+
+{
+  "buildingId": "00000000-0000-0000-0000-000000000001",
+  "unitId": null,
+  "title": "Lobby light broken",
+  "description": "The main lobby light on the ground floor is not working.",
+  "type": "Maintenance",
+  "severity": "Medium",
+  "location": "Ground floor lobby"
+}
+
+### OpenAPI Spec
+GET {{EM2Devs.BuildingManagement.Api_HostAddress}}/openapi/v1.json
+Accept: application/json

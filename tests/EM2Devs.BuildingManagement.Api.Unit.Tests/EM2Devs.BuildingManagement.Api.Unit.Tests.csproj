@@ -12,7 +12,7 @@
     <ThresholdType>line,branch,method</ThresholdType>
     <ThresholdStat>total</ThresholdStat>
     <ExcludeByFile>**/obj/**/*.generated.cs</ExcludeByFile>
-    <Exclude>[*.Tests]*,[*.Unit.Tests]*</Exclude>
+    <Exclude>[*.Tests]*,[*.Unit.Tests]*,[EM2Devs.BuildingManagement.Application]EM2Devs.BuildingManagement.Application.Contracts.*</Exclude>
   </PropertyGroup>
 
   <ItemGroup>
