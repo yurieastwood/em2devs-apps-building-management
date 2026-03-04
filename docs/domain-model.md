@@ -602,7 +602,7 @@ Manager                         BC-07 Incident
 
 - Every aggregate mutation records `CreatedAt`, `UpdatedAt`, and the responsible `ManagerId`.
 - Domain events serve as the primary audit log. They must be persisted to an event store or outbox table (infrastructure decision).
-- The Outbox Pattern is recommended to guarantee at-least-once delivery of events without distributed transactions (⚠️ HYPOTHESIS — confirm with architect).
+- The Outbox Pattern guarantees at-least-once delivery of events without distributed transactions — see [ADR-0007](adr/20260303-use-outbox-pattern-for-domain-events.md).
 
 ---
 
@@ -667,11 +667,11 @@ Manager                         BC-07 Incident
 
 **Architecture follow-up:**
 
-8. Define the Outbox Pattern implementation for domain event publication.
-9. Decide row-level tenant isolation strategy: shared schema (TenantId column) vs. schema-per-tenant.
-10. Define the `IDocumentStorageService` interface contract and Local filesystem adapter.
-11. Design the LGPD erasure background job trigger and schedule.
-12. Confirm whether domain events are stored in a separate event store or derived from the Outbox table.
+8. ~~Define the Outbox Pattern implementation for domain event publication.~~ **RESOLVED:** [ADR-0007 — Use Outbox Pattern for Domain Events](adr/20260303-use-outbox-pattern-for-domain-events.md). Same-transaction write via EF Core SaveChanges; outbox table doubles as event store and audit log.
+9. ~~Decide row-level tenant isolation strategy: shared schema (TenantId column) vs. schema-per-tenant.~~ **RESOLVED:** [ADR-0003 — Use EF Core with PostgreSQL for Persistence](adr/20260224-use-ef-core-with-postgresql-for-persistence.md). Shared schema with TenantId column, EF Core global query filters, SaveChanges interceptor enforcement.
+10. ~~Define the `IDocumentStorageService` interface contract and Local filesystem adapter.~~ **RESOLVED:** [ADR-0004 — Use Storage Abstraction for File Management](adr/20260224-use-storage-abstraction-for-file-management.md). `IFileStorageService` interface (not `IDocumentStorageService` — storage abstraction is shared infrastructure). Interface expansion (presigned URLs, container path conventions) deferred to implementation.
+11. ~~Design the LGPD erasure background job trigger and schedule.~~ **RESOLVED:** [ADR-0008 — LGPD Data Erasure Strategy](adr/20260303-lgpd-data-erasure-strategy.md). Daily BackgroundService sweep; pseudonymization with `[ERASED-{hash}]` tokens; blocked by open Incidents.
+12. ~~Confirm whether domain events are stored in a separate event store or derived from the Outbox table.~~ **RESOLVED:** [ADR-0007 — Use Outbox Pattern for Domain Events](adr/20260303-use-outbox-pattern-for-domain-events.md). Outbox table IS the event store. No separate EventStoreDB. Processed messages retained 90 days for audit.
 
 **Implementation follow-up:**
 
