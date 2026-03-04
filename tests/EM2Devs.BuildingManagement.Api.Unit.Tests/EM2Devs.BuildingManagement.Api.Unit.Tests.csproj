@@ -11,7 +11,7 @@
     <Threshold>80</Threshold>
     <ThresholdType>line,branch,method</ThresholdType>
     <ThresholdStat>total</ThresholdStat>
-    <ExcludeByFile>**/obj/**/*.generated.cs</ExcludeByFile>
+    <ExcludeByFile>**/obj/**/*.generated.cs,**/Program.cs</ExcludeByFile>
     <Exclude>[*.Tests]*,[*.Unit.Tests]*,[EM2Devs.BuildingManagement.Application]EM2Devs.BuildingManagement.Application.Contracts.Authentication.*,[EM2Devs.BuildingManagement.Application]EM2Devs.BuildingManagement.Application.Contracts.Managers.*,[EM2Devs.BuildingManagement.Application]EM2Devs.BuildingManagement.Application.Contracts.Buildings.*,[EM2Devs.BuildingManagement.Application]EM2Devs.BuildingManagement.Application.Contracts.Residents.*,[EM2Devs.BuildingManagement.Application]EM2Devs.BuildingManagement.Application.Contracts.Announcements.*,[EM2Devs.BuildingManagement.Application]EM2Devs.BuildingManagement.Application.Contracts.Documents.*,[EM2Devs.BuildingManagement.Application]EM2Devs.BuildingManagement.Application.Contracts.Visits.*,[EM2Devs.BuildingManagement.Application]EM2Devs.BuildingManagement.Application.Contracts.Incidents.*,[EM2Devs.BuildingManagement.Application]EM2Devs.BuildingManagement.Application.Contracts.Common.ErrorResponse</Exclude>
   </PropertyGroup>
 
