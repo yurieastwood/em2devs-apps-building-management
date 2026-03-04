@@ -25,7 +25,7 @@ public class OpenApiSpecTests : IClassFixture<TestWebApplicationFactory>
     {
         var response = await _client.GetAsync("/openapi/v1.json");
         var content = await response.Content.ReadAsStringAsync();
-        var document = JsonDocument.Parse(content);
+        using var document = JsonDocument.Parse(content);
         var paths = document.RootElement.GetProperty("paths");
 
         var expectedPrefixes = new[] { "/auth/", "/managers", "/buildings", "/residents", "/announcements", "/documents", "/visits", "/incidents" };
@@ -51,7 +51,7 @@ public class OpenApiSpecTests : IClassFixture<TestWebApplicationFactory>
     {
         var response = await _client.GetAsync("/openapi/v1.json");
         var content = await response.Content.ReadAsStringAsync();
-        var document = JsonDocument.Parse(content);
+        using var document = JsonDocument.Parse(content);
         var tags = document.RootElement.GetProperty("tags");
 
         var expectedTags = new[] { "Authentication", "Managers", "Buildings", "Residents", "Announcements", "Documents", "Visits", "Incidents" };
