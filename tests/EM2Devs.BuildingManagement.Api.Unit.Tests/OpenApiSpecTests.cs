@@ -21,7 +21,7 @@ public class OpenApiSpecTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
-    public async Task OpenApiSpec_ContainsAllEndpointTags()
+    public async Task OpenApiSpec_ContainsAllRoutePrefixes()
     {
         var response = await _client.GetAsync("/openapi/v1.json");
         var content = await response.Content.ReadAsStringAsync();
@@ -43,6 +43,25 @@ public class OpenApiSpecTests : IClassFixture<TestWebApplicationFactory>
             }
 
             Assert.True(hasPath, $"OpenAPI spec should contain paths starting with '{prefix}'");
+        }
+    }
+
+    [Fact]
+    public async Task OpenApiSpec_ContainsAllEndpointTags()
+    {
+        var response = await _client.GetAsync("/openapi/v1.json");
+        var content = await response.Content.ReadAsStringAsync();
+        var document = JsonDocument.Parse(content);
+        var tags = document.RootElement.GetProperty("tags");
+
+        var expectedTags = new[] { "Authentication", "Managers", "Buildings", "Residents", "Announcements", "Documents", "Visits", "Incidents" };
+        var actualTags = tags.EnumerateArray()
+            .Select(t => t.GetProperty("name").GetString())
+            .ToHashSet();
+
+        foreach (var expected in expectedTags)
+        {
+            Assert.Contains(expected, actualTags);
         }
     }
 }
