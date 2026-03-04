@@ -8,20 +8,27 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 
+var jwtSection = builder.Configuration.GetSection("Jwt");
+var jwtKey = jwtSection["Key"];
+var jwtIssuer = jwtSection["Issuer"];
+var jwtAudience = jwtSection["Audience"];
+
+if (!builder.Environment.IsDevelopment() && (string.IsNullOrEmpty(jwtKey) || string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience)))
+    throw new InvalidOperationException("Jwt:Key, Jwt:Issuer, and Jwt:Audience must be configured in non-Development environments.");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        // TODO: Replace with real configuration (issuer, audience, signing key) from appsettings / secrets.
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "https://localhost",
-            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "building-management-api",
+            ValidIssuer = jwtIssuer ?? "https://localhost",
+            ValidAudience = jwtAudience ?? "building-management-api",
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "REPLACE-WITH-A-SECURE-KEY-OF-AT-LEAST-32-CHARS!"))
+                Encoding.UTF8.GetBytes(jwtKey ?? "dev-only-key-do-not-use-in-production!!"))
         };
     });
 builder.Services.AddAuthorization();
