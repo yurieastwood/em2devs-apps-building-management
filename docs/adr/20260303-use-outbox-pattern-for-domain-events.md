@@ -64,7 +64,7 @@ public interface IDomainEvent
 
 public abstract record DomainEvent(Guid TenantId) : IDomainEvent
 {
-    public Guid EventId { get; init; } = Ulid.NewUlid().ToGuid();
+    public Guid EventId { get; init; } = Guid.CreateVersion7();
     public DateTime OccurredAt { get; init; } = DateTime.UtcNow;
     public abstract string EventType { get; }
 }
