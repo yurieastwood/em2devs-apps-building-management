@@ -569,7 +569,7 @@ Manager                         BC-07 Incident
 - **TenantId is a discriminator on every aggregate root** and must be validated on every command before any domain logic runs.
 - TenantId is extracted from the JWT claims — it is never accepted from the request body.
 - All repository queries MUST include a TenantId filter at the infrastructure layer. This is enforced by convention and should be tested with integration tests per context.
-- Row-level isolation strategy (one schema per tenant vs. shared schema with TenantId column) is an **infrastructure decision** deferred to the Solution Architect. The domain model is neutral.
+- Row-level isolation uses a **shared schema with a TenantId column** on every aggregate root table, enforced via EF Core global query filters and a SaveChanges interceptor — see [ADR-0003](adr/20260224-use-ef-core-with-postgresql-for-persistence.md). The domain model is neutral to the isolation mechanism.
 
 ### 8.2 LGPD / GDPR Compliance
 
@@ -697,11 +697,11 @@ Manager                         BC-07 Incident
 
 ### To Solution Architect Agent
 
-- **Multi-tenancy isolation** strategy is unresolved — recommend deciding between shared schema with TenantId discriminator (simpler) vs. schema-per-tenant (stronger isolation, more ops overhead). Domain model supports both.
+- **Multi-tenancy isolation** — resolved: shared schema with TenantId column, EF Core global query filters, SaveChanges interceptor enforcement. See [ADR-0003](adr/20260224-use-ef-core-with-postgresql-for-persistence.md).
 - **Strong consistency seams** (Section 9.2) that query across contexts synchronously — if contexts are eventually deployed as separate services, these become synchronous HTTP calls and introduce latency/coupling. For MVP (single deployment), this is acceptable.
-- **Outbox Pattern** is recommended for all domain event publication to avoid dual-write issues with PostgreSQL.
-- **File storage abstraction** (`IFileStorageService`, see [ADR-0004](adr/20260224-use-storage-abstraction-for-file-management.md)) must be designed before Document context implementation. Interface contract is the only coupling point.
-- **LGPD background worker** needs a reliable scheduling mechanism and idempotent design (may run multiple times on same record).
+- **Outbox Pattern** — resolved: same-transaction write via EF Core SaveChanges; outbox table doubles as event store and audit log. See [ADR-0007](adr/20260303-use-outbox-pattern-for-domain-events.md).
+- **File storage abstraction** — resolved: `IFileStorageService` interface in Application layer. See [ADR-0004](adr/20260224-use-storage-abstraction-for-file-management.md). Interface expansion (presigned URLs, container path conventions) deferred to implementation.
+- **LGPD background worker** — resolved: daily BackgroundService sweep with pseudonymization, blocked by open Incidents. See [ADR-0008](adr/20260303-lgpd-data-erasure-strategy.md).
 - **Soft delete + PII pseudonymization** must both be supported — the infrastructure layer must handle this without conflating the two operations.
 - Recommend a single `CorrelationId` (trace ID) on all commands and events for distributed tracing readiness.
 
