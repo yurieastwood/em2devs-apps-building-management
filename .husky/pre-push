@@ -1,0 +1,3 @@
+#!/bin/sh
+[ "$HUSKY" = "0" ] || [ "$HUSKY" = "false" ] && exit 0
+dotnet husky run --group pre-push

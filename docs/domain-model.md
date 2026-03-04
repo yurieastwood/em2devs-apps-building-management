@@ -569,7 +569,7 @@ Manager                         BC-07 Incident
 - **TenantId is a discriminator on every aggregate root** and must be validated on every command before any domain logic runs.
 - TenantId is extracted from the JWT claims — it is never accepted from the request body.
 - All repository queries MUST include a TenantId filter at the infrastructure layer. This is enforced by convention and should be tested with integration tests per context.
-- Row-level isolation strategy (one schema per tenant vs. shared schema with TenantId column) is an **infrastructure decision** deferred to the Solution Architect. The domain model is neutral.
+- Row-level isolation uses a **shared schema with a TenantId column** on every aggregate root table, enforced via EF Core global query filters and a SaveChanges interceptor — see [ADR-0003](adr/20260224-use-ef-core-with-postgresql-for-persistence.md). The domain model is neutral to the isolation mechanism.
 
 ### 8.2 LGPD / GDPR Compliance
 
@@ -602,7 +602,7 @@ Manager                         BC-07 Incident
 
 - Every aggregate mutation records `CreatedAt`, `UpdatedAt`, and the responsible `ManagerId`.
 - Domain events serve as the primary audit log. They must be persisted to an event store or outbox table (infrastructure decision).
-- The Outbox Pattern is recommended to guarantee at-least-once delivery of events without distributed transactions (⚠️ HYPOTHESIS — confirm with architect).
+- The Outbox Pattern guarantees at-least-once delivery of events without distributed transactions — see [ADR-0007](adr/20260303-use-outbox-pattern-for-domain-events.md).
 
 ---
 
@@ -635,7 +635,7 @@ Manager                         BC-07 Incident
 
 | Complexity | Isolation Mechanism |
 |---|---|
-| File storage backend switching (Local → AzureBlob) | `IDocumentStorageService` interface in Document context. Domain holds only `StorageReference`. |
+| File storage backend switching (Local → AzureBlob) | `IFileStorageService` interface in Application layer (see [ADR-0004](adr/20260224-use-storage-abstraction-for-file-management.md)). Domain holds only `StorageReference`. |
 | Audience resolution logic | `AudienceResolver` domain service in Announcement context, querying Resident Registry. |
 | LGPD erasure workflow | Dedicated application service / background worker, not part of any aggregate. |
 | JWT claims extraction and TenantId resolution | IAM middleware / application layer. Never leaks into domain. |
@@ -667,11 +667,11 @@ Manager                         BC-07 Incident
 
 **Architecture follow-up:**
 
-8. Define the Outbox Pattern implementation for domain event publication.
-9. Decide row-level tenant isolation strategy: shared schema (TenantId column) vs. schema-per-tenant.
-10. Define the `IDocumentStorageService` interface contract and Local filesystem adapter.
-11. Design the LGPD erasure background job trigger and schedule.
-12. Confirm whether domain events are stored in a separate event store or derived from the Outbox table.
+8. ~~Define the Outbox Pattern implementation for domain event publication.~~ **RESOLVED:** [ADR-0007 — Use Outbox Pattern for Domain Events](adr/20260303-use-outbox-pattern-for-domain-events.md). Same-transaction write via EF Core SaveChanges; outbox table doubles as event store and audit log.
+9. ~~Decide row-level tenant isolation strategy: shared schema (TenantId column) vs. schema-per-tenant.~~ **RESOLVED:** [ADR-0003 — Use EF Core with PostgreSQL for Persistence](adr/20260224-use-ef-core-with-postgresql-for-persistence.md). Shared schema with TenantId column, EF Core global query filters, SaveChanges interceptor enforcement.
+10. ~~Define the `IDocumentStorageService` interface contract and Local filesystem adapter.~~ **RESOLVED:** [ADR-0004 — Use Storage Abstraction for File Management](adr/20260224-use-storage-abstraction-for-file-management.md). `IFileStorageService` interface (not `IDocumentStorageService` — storage abstraction is shared infrastructure). Interface expansion (presigned URLs, container path conventions) deferred to implementation.
+11. ~~Design the LGPD erasure background job trigger and schedule.~~ **RESOLVED:** [ADR-0008 — LGPD Data Erasure Strategy](adr/20260303-lgpd-data-erasure-strategy.md). Daily BackgroundService sweep; pseudonymization with `[ERASED-{hash}]` tokens; blocked by open Incidents.
+12. ~~Confirm whether domain events are stored in a separate event store or derived from the Outbox table.~~ **RESOLVED:** [ADR-0007 — Use Outbox Pattern for Domain Events](adr/20260303-use-outbox-pattern-for-domain-events.md). Outbox table IS the event store. No separate EventStoreDB. Processed messages retained 90 days for audit.
 
 **Implementation follow-up:**
 
@@ -697,11 +697,11 @@ Manager                         BC-07 Incident
 
 ### To Solution Architect Agent
 
-- **Multi-tenancy isolation** strategy is unresolved — recommend deciding between shared schema with TenantId discriminator (simpler) vs. schema-per-tenant (stronger isolation, more ops overhead). Domain model supports both.
+- **Multi-tenancy isolation** — resolved: shared schema with TenantId column, EF Core global query filters, SaveChanges interceptor enforcement. See [ADR-0003](adr/20260224-use-ef-core-with-postgresql-for-persistence.md).
 - **Strong consistency seams** (Section 9.2) that query across contexts synchronously — if contexts are eventually deployed as separate services, these become synchronous HTTP calls and introduce latency/coupling. For MVP (single deployment), this is acceptable.
-- **Outbox Pattern** is recommended for all domain event publication to avoid dual-write issues with PostgreSQL.
-- **File storage abstraction** (`IDocumentStorageService`) must be designed before Document context implementation. Interface contract is the only coupling point.
-- **LGPD background worker** needs a reliable scheduling mechanism and idempotent design (may run multiple times on same record).
+- **Outbox Pattern** — resolved: same-transaction write via EF Core SaveChanges; outbox table doubles as event store and audit log. See [ADR-0007](adr/20260303-use-outbox-pattern-for-domain-events.md).
+- **File storage abstraction** — resolved: `IFileStorageService` interface in Application layer. See [ADR-0004](adr/20260224-use-storage-abstraction-for-file-management.md). Interface expansion (presigned URLs, container path conventions) deferred to implementation.
+- **LGPD background worker** — resolved: daily BackgroundService sweep with pseudonymization, blocked by open Incidents. See [ADR-0008](adr/20260303-lgpd-data-erasure-strategy.md).
 - **Soft delete + PII pseudonymization** must both be supported — the infrastructure layer must handle this without conflating the two operations.
 - Recommend a single `CorrelationId` (trace ID) on all commands and events for distributed tracing readiness.
 
