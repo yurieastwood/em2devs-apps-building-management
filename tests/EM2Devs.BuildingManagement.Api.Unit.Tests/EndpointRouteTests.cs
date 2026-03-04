@@ -1,5 +1,13 @@
 using System.Net;
 using System.Net.Http.Json;
+using EM2Devs.BuildingManagement.Application.Contracts.Announcements;
+using EM2Devs.BuildingManagement.Application.Contracts.Authentication;
+using EM2Devs.BuildingManagement.Application.Contracts.Buildings;
+using EM2Devs.BuildingManagement.Application.Contracts.Documents;
+using EM2Devs.BuildingManagement.Application.Contracts.Incidents;
+using EM2Devs.BuildingManagement.Application.Contracts.Managers;
+using EM2Devs.BuildingManagement.Application.Contracts.Residents;
+using EM2Devs.BuildingManagement.Application.Contracts.Visits;
 
 namespace EM2Devs.BuildingManagement.Api.Unit.Tests;
 
@@ -15,13 +23,8 @@ public class EndpointRouteTests : IClassFixture<TestWebApplicationFactory>
     [Fact]
     public async Task AuthRegister_ReturnsCreated()
     {
-        var response = await _client.PostAsJsonAsync("/auth/register", new
-        {
-            Email = "test@example.com",
-            FullName = "Test User",
-            Password = "Test123!",
-            ConfirmPassword = "Test123!"
-        });
+        var response = await _client.PostAsJsonAsync("/auth/register",
+            new RegisterRequest("test@example.com", "Test User", "Test123!", "Test123!"));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
@@ -29,11 +32,8 @@ public class EndpointRouteTests : IClassFixture<TestWebApplicationFactory>
     [Fact]
     public async Task AuthLogin_ReturnsOk()
     {
-        var response = await _client.PostAsJsonAsync("/auth/login", new
-        {
-            Email = "test@example.com",
-            Password = "Test123!"
-        });
+        var response = await _client.PostAsJsonAsync("/auth/login",
+            new LoginRequest("test@example.com", "Test123!"));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -41,10 +41,8 @@ public class EndpointRouteTests : IClassFixture<TestWebApplicationFactory>
     [Fact]
     public async Task AuthRefresh_ReturnsOk()
     {
-        var response = await _client.PostAsJsonAsync("/auth/refresh", new
-        {
-            RefreshToken = "stub-token"
-        });
+        var response = await _client.PostAsJsonAsync("/auth/refresh",
+            new RefreshRequest("stub-token"));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -76,111 +74,19 @@ public class EndpointRouteTests : IClassFixture<TestWebApplicationFactory>
     [Fact]
     public async Task CreateBuilding_ReturnsCreated()
     {
-        var response = await _client.PostAsJsonAsync("/buildings", new
-        {
-            Name = "Test Building",
-            Address = new
-            {
-                Street = "Test St",
-                Number = "1",
-                Neighborhood = "Centro",
-                City = "São Paulo",
-                State = "SP",
-                PostalCode = "01000-000",
-                Country = "BR"
-            },
-            TotalFloors = 10
-        });
+        var address = new AddressDto("Test St", "1", null, "Centro", "São Paulo", "SP", "01000-000", "BR");
+        var response = await _client.PostAsJsonAsync("/buildings",
+            new CreateBuildingRequest("Test Building", address, 10));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task ListResidents_ReturnsOk()
-    {
-        var response = await _client.GetAsync("/residents?page=1&pageSize=10");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task ListAnnouncements_ReturnsOk()
-    {
-        var response = await _client.GetAsync("/announcements?page=1&pageSize=10");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task ListDocuments_ReturnsOk()
-    {
-        var response = await _client.GetAsync("/documents?page=1&pageSize=10");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task ListVisits_ReturnsOk()
-    {
-        var response = await _client.GetAsync("/visits?page=1&pageSize=10");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task ListIncidents_ReturnsOk()
-    {
-        var response = await _client.GetAsync("/incidents?page=1&pageSize=10");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task ReportIncident_ReturnsCreated()
-    {
-        var response = await _client.PostAsJsonAsync("/incidents", new
-        {
-            BuildingId = Guid.NewGuid(),
-            Title = "Test Incident",
-            Description = "A test incident",
-            Type = "Maintenance",
-            Severity = "Medium"
-        });
-
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task CreateManager_ReturnsCreated()
-    {
-        var response = await _client.PostAsJsonAsync("/managers", new
-        {
-            Email = "manager@example.com",
-            FullName = "Test Manager",
-            Password = "Test123!",
-            Role = "BuildingManager"
-        });
-
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetManager_ReturnsOk()
-    {
-        var response = await _client.GetAsync($"/managers/{Guid.NewGuid()}");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
     public async Task UpdateBuilding_ReturnsOk()
     {
-        var response = await _client.PutAsJsonAsync($"/buildings/{Guid.NewGuid()}", new
-        {
-            Name = "Updated Building",
-            Address = new { Street = "Test St", Number = "1", Neighborhood = "Centro", City = "São Paulo", State = "SP", PostalCode = "01000-000", Country = "BR" },
-            TotalFloors = 15
-        });
+        var address = new AddressDto("Test St", "1", null, "Centro", "São Paulo", "SP", "01000-000", "BR");
+        var response = await _client.PutAsJsonAsync($"/buildings/{Guid.NewGuid()}",
+            new UpdateBuildingRequest("Updated Building", address, 15));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -188,12 +94,8 @@ public class EndpointRouteTests : IClassFixture<TestWebApplicationFactory>
     [Fact]
     public async Task AddUnit_ReturnsCreated()
     {
-        var response = await _client.PostAsJsonAsync($"/buildings/{Guid.NewGuid()}/units", new
-        {
-            UnitNumber = "101",
-            Floor = 1,
-            Type = "Residential"
-        });
+        var response = await _client.PostAsJsonAsync($"/buildings/{Guid.NewGuid()}/units",
+            new AddUnitRequest("101", 1, "Residential"));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
@@ -215,18 +117,35 @@ public class EndpointRouteTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task CreateManager_ReturnsCreated()
+    {
+        var response = await _client.PostAsJsonAsync("/managers",
+            new CreateManagerRequest("manager@example.com", "Test Manager", "Test123!", "BuildingManager"));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetManager_ReturnsOk()
+    {
+        var response = await _client.GetAsync($"/managers/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListResidents_ReturnsOk()
+    {
+        var response = await _client.GetAsync("/residents?page=1&pageSize=10");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task RegisterResident_ReturnsCreated()
     {
-        var response = await _client.PostAsJsonAsync("/residents", new
-        {
-            BuildingId = Guid.NewGuid(),
-            UnitId = Guid.NewGuid(),
-            FullName = "Test Resident",
-            Email = "resident@example.com",
-            Phone = "+5511999999999",
-            DocumentNumber = "123.456.789-00",
-            Role = "Owner"
-        });
+        var response = await _client.PostAsJsonAsync("/residents",
+            new RegisterResidentRequest(Guid.NewGuid(), Guid.NewGuid(), "Test Resident", "resident@example.com", "+5511999999999", "123.456.789-00", "Owner"));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
@@ -240,14 +159,19 @@ public class EndpointRouteTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task ListAnnouncements_ReturnsOk()
+    {
+        var response = await _client.GetAsync("/announcements?page=1&pageSize=10");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task CreateAnnouncement_ReturnsCreated()
     {
-        var response = await _client.PostAsJsonAsync("/announcements", new
-        {
-            Title = "Test Announcement",
-            Body = "Test body",
-            Audience = new { Scope = "BuildingWide", BuildingId = Guid.NewGuid() }
-        });
+        var audience = new AudienceSpecificationDto("BuildingWide", Guid.NewGuid(), null, null);
+        var response = await _client.PostAsJsonAsync("/announcements",
+            new CreateAnnouncementRequest("Test Announcement", "Test body", audience));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
@@ -261,14 +185,18 @@ public class EndpointRouteTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task ListDocuments_ReturnsOk()
+    {
+        var response = await _client.GetAsync("/documents?page=1&pageSize=10");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task UploadDocument_ReturnsCreated()
     {
-        var response = await _client.PostAsJsonAsync("/documents/upload", new
-        {
-            OriginalFileName = "test.pdf",
-            ContentType = "application/pdf",
-            FileSizeBytes = 1024
-        });
+        var response = await _client.PostAsJsonAsync("/documents/upload",
+            new UploadDocumentRequest("test.pdf", "application/pdf", 1024));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
@@ -282,13 +210,18 @@ public class EndpointRouteTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task ListVisits_ReturnsOk()
+    {
+        var response = await _client.GetAsync("/visits?page=1&pageSize=10");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task ScheduleVisit_ReturnsCreated()
     {
-        var response = await _client.PostAsJsonAsync("/visits", new
-        {
-            BuildingId = Guid.NewGuid(),
-            ScheduledDate = DateTime.UtcNow.AddDays(1)
-        });
+        var response = await _client.PostAsJsonAsync("/visits",
+            new ScheduleVisitRequest(Guid.NewGuid(), DateTime.UtcNow.AddDays(1), null));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
@@ -302,6 +235,23 @@ public class EndpointRouteTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task ListIncidents_ReturnsOk()
+    {
+        var response = await _client.GetAsync("/incidents?page=1&pageSize=10");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ReportIncident_ReturnsCreated()
+    {
+        var response = await _client.PostAsJsonAsync("/incidents",
+            new ReportIncidentRequest(Guid.NewGuid(), null, "Test Incident", "A test incident", "Maintenance", "Medium", null));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetIncident_ReturnsOk()
     {
         var response = await _client.GetAsync($"/incidents/{Guid.NewGuid()}");
@@ -312,10 +262,8 @@ public class EndpointRouteTests : IClassFixture<TestWebApplicationFactory>
     [Fact]
     public async Task UpdateIncidentStatus_ReturnsOk()
     {
-        var response = await _client.PatchAsJsonAsync($"/incidents/{Guid.NewGuid()}/status", new
-        {
-            Status = "InProgress"
-        });
+        var response = await _client.PatchAsJsonAsync($"/incidents/{Guid.NewGuid()}/status",
+            new UpdateIncidentStatusRequest("InProgress"));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
