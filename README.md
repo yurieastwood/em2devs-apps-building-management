@@ -1,5 +1,10 @@
 # EM2Devs Building Management
 
+[![CI](https://github.com/yurieastwood/em2devs-apps-building-management/actions/workflows/ci.yaml/badge.svg)](https://github.com/yurieastwood/em2devs-apps-building-management/actions/workflows/ci.yaml)
+[![ADR Site](https://github.com/yurieastwood/em2devs-apps-building-management/actions/workflows/log4brains.yaml/badge.svg)](https://github.com/yurieastwood/em2devs-apps-building-management/actions/workflows/log4brains.yaml)
+![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
+
 A multi-tenant SaaS platform for residential and commercial building management, built with .NET 10 and Clean Architecture.
 
 ## Overview
@@ -180,4 +185,4 @@ Key architectural decisions are documented in [`docs/adr/`](docs/adr/).
 
 ## License
 
-This project is proprietary. All rights reserved.
+This project is licensed under the [GNU Affero General Public License v3.0](LICENSE).
