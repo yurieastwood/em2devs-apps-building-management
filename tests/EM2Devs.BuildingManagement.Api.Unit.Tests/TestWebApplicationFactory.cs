@@ -29,12 +29,15 @@ internal sealed class TestAuthHandler(
     UrlEncoder encoder)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
+    internal static readonly Guid TestUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+    internal static readonly Guid TestTenantId = Guid.Parse("00000000-0000-0000-0000-000000000002");
+
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         var claims = new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
-            new Claim("tenant_id", Guid.NewGuid().ToString()),
+            new Claim(ClaimTypes.NameIdentifier, TestUserId.ToString()),
+            new Claim("tenant_id", TestTenantId.ToString()),
             new Claim(ClaimTypes.Role, "SuperAdmin"),
             new Claim(ClaimTypes.Email, "test@example.com")
         };
