@@ -80,9 +80,25 @@ docker build -t em2devs-building-management .
 
 ### Run the container
 
+**Development** (enables OpenAPI/Scalar UI, uses built-in dev JWT defaults):
+
 ```bash
-docker run -d -p 8080:8080 --name building-management em2devs-building-management
+docker run -d -p 8080:8080 --name building-management \
+  -e ASPNETCORE_ENVIRONMENT=Development \
+  em2devs-building-management
 ```
+
+**Production** (requires explicit JWT configuration):
+
+```bash
+docker run -d -p 8080:8080 --name building-management \
+  -e Jwt__Key="<your-secret-key-min-32-chars>" \
+  -e Jwt__Issuer="https://your-issuer" \
+  -e Jwt__Audience="your-audience" \
+  em2devs-building-management
+```
+
+> **Note:** Use double underscores (`__`) as the section separator for ASP.NET Core environment variable configuration. The application will fail fast on startup if any JWT setting is missing in non-Development environments.
 
 The API will be available at `http://localhost:8080`.
 
