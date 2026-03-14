@@ -198,7 +198,8 @@ dotnet stryker                                       # Full run
 dotnet stryker --since:main                          # Incremental (changed code only)
 ```
 
-- **Break threshold**: 50% — builds fail below this score.
+- **Initial Break threshold**: 5% — builds fail below this score.
+- **Target Break threshold**: 80% — builds fail below this score.
 - **Mutated sources**: all `src/**/*.cs` except `Program.cs`, DTO contracts, and migrations.
 - Reports are generated in `StrykerOutput/` (git-ignored).
 - Pre-push hook runs incremental mode (`--since:main`) automatically.
@@ -275,4 +276,4 @@ GitHub Actions (`.github/workflows/ci.yaml`) runs: lint-commit, lint-branch, lin
 - **Auth on endpoints** — every endpoint group except `/auth` must call `.RequireAuthorization()`.
 - **Hook bypass** — never use `--no-verify`. If hooks fail, fix the underlying issue.
 - **Coverage regression** — keep coverage above 80%. New code should be tested.
-- **Mutation score** — keep mutation score above the break threshold (50%). Surviving mutants indicate weak assertions that should be strengthened.
+- **Mutation score** — keep mutation score above the break threshold. Surviving mutants indicate weak assertions that should be strengthened.
