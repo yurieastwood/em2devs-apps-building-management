@@ -1,0 +1,25 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-net/master/src/Stryker.Core/Stryker.Core/stryker-config.schema.json",
+  "stryker-config": {
+    "solution": "em2devs-apps-building-management.sln",
+    "target-framework": "net10.0",
+    "mutation-level": "Standard",
+    "reporters": ["html", "progress", "cleartext"],
+    "thresholds": {
+      "high": 100,
+      "low": 100,
+      "break": 5
+    },
+    "mutate": [
+      "**/*.cs",
+      "!**/Program.cs",
+      "!**/Contracts/**/*.cs",
+      "!**/Migrations/**/*.cs",
+      "!**/obj/**/*.cs",
+      "!**/*.generated.cs"
+    ],
+    "ignore-methods": ["AddOpenApi", "MapOpenApi"],
+    "language-version": "preview",
+    "concurrency": 4
+  }
+}
