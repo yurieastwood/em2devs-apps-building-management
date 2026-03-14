@@ -125,6 +125,20 @@ dotnet test --verbosity normal
 
 The test project enforces an **80% coverage threshold** (line, branch, and method) via Coverlet. Coverage reports are output to `tests/TestResults/coverage.cobertura.xml`.
 
+### Mutation Testing
+
+[Stryker.NET](https://github.com/stryker-mutator/stryker-net) validates that the test suite catches real code changes ([ADR](docs/adr/20260313-use-stryker-net-for-mutation-testing.md)):
+
+```bash
+# Full run
+STRYKER_MUTATING=true dotnet stryker
+
+# Incremental (changed code only — used by pre-push hook and CI)
+STRYKER_MUTATING=true dotnet stryker --since:main
+```
+
+HTML reports are generated in `StrykerOutput/`. Configuration lives in `stryker-config.json`.
+
 ## API Endpoints
 
 The API exposes 53 endpoints across 8 groups. All endpoints except `/auth/*` require authorization.
@@ -154,7 +168,7 @@ The project uses [Husky.NET](https://alirezanet.github.io/Husky.Net/) for automa
 |------|-------|
 | **pre-commit** | `dotnet format --verify-no-changes`, `dotnet build -c Release`, `dotnet test -c Release` |
 | **commit-msg** | Conventional Commits validation (e.g., `feat: ...`, `fix(auth): ...`) |
-| **pre-push** | Branch name validation |
+| **pre-push** | Branch name validation, mutation testing (`dotnet stryker --since:main`) |
 
 ### Commit Message Convention
 
@@ -195,7 +209,7 @@ Key architectural decisions are documented in [`docs/adr/`](docs/adr/).
 - **.NET 10** (preview) with Minimal APIs
 - **ASP.NET Core OpenAPI** for automatic spec generation
 - **Entity Framework Core** with PostgreSQL (planned)
-- **xUnit** + **Coverlet** for testing and coverage
+- **xUnit** + **Coverlet** for testing and coverage, **Stryker.NET** for mutation testing
 - **Husky.NET** for git hooks
 - **Docker** for containerization
 

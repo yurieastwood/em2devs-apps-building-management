@@ -141,3 +141,43 @@ jobs:
 
       - name: Test with coverage
         run: dotnet test -c Release --no-build --no-restore
+
+  mutation:
+    name: Mutation Testing
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+          dotnet-quality: preview
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Restore tools
+        run: dotnet tool restore
+
+      - name: Run mutation testing
+        env:
+          STRYKER_MUTATING: true
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            dotnet stryker --since:origin/${{ github.base_ref }} --reporter cleartext --reporter html
+          else
+            dotnet stryker --reporter cleartext --reporter html
+          fi
+
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report
+          path: StrykerOutput/**/reports/
+          retention-days: 14

@@ -189,6 +189,22 @@ dotnet test                                          # All tests
 dotnet test -c Release /p:CollectCoverage=true       # With coverage
 ```
 
+### Mutation Testing ([ADR-0010](docs/adr/20260313-use-stryker-net-for-mutation-testing.md))
+
+[Stryker.NET](https://github.com/stryker-mutator/stryker-net) validates that the test suite catches real code changes. Config lives in `stryker-config.json`.
+
+```bash
+STRYKER_MUTATING=true dotnet stryker                 # Full run
+STRYKER_MUTATING=true dotnet stryker --since:main    # Incremental (changed code only)
+```
+
+- **Initial Break threshold**: 5% — builds fail below this score.
+- **Target Break threshold**: 80% — builds fail below this score.
+- **Mutated sources**: all `src/**/*.cs` except `Program.cs`, DTO contracts, and migrations.
+- Reports are generated in `StrykerOutput/` (git-ignored).
+- Pre-push hook runs incremental mode (`--since:main`) automatically.
+- CI runs incremental mode against the PR base branch and uploads the HTML report as an artifact.
+
 ## Quality Gates
 
 ### Pre-Commit (Husky.NET)
@@ -210,6 +226,14 @@ Conventional Commits format is enforced by the `commit-msg` hook:
 Valid types: feat, fix, build, chore, ci, docs, style, refactor, perf, test
 ```
 
+### Pre-Push (Husky.NET)
+
+Every push automatically runs:
+1. Branch name validation (Conventional Branches)
+2. `dotnet stryker --since:main` — mutation testing (incremental)
+
+If any step fails, the push is rejected.
+
 ### Branch Names
 
 Validated on push by the `pre-push` hook:
@@ -222,7 +246,7 @@ Valid types: feat, fix, bugfix, hotfix, release, chore
 
 ### CI Pipeline
 
-GitHub Actions (`.github/workflows/ci.yaml`) runs: lint-commit, lint-branch, lint-format, build, test. All checks must pass before merge.
+GitHub Actions (`.github/workflows/ci.yaml`) runs: lint-commit, lint-branch, lint-format, build, test, mutation. All checks must pass before merge.
 
 ## Project Entry Points
 
@@ -239,6 +263,7 @@ GitHub Actions (`.github/workflows/ci.yaml`) runs: lint-commit, lint-branch, lin
 | CI pipeline | `.github/workflows/ci.yaml` |
 | Docker config | `Dockerfile`, `compose.yaml` |
 | Git hooks | `.husky/task-runner.json` |
+| Mutation config | `stryker-config.json` |
 | HTTP samples | `src/EM2Devs.BuildingManagement.Api/EM2Devs.BuildingManagement.Api.http` |
 
 ## Things to Watch Out For
@@ -251,3 +276,4 @@ GitHub Actions (`.github/workflows/ci.yaml`) runs: lint-commit, lint-branch, lin
 - **Auth on endpoints** — every endpoint group except `/auth` must call `.RequireAuthorization()`.
 - **Hook bypass** — never use `--no-verify`. If hooks fail, fix the underlying issue.
 - **Coverage regression** — keep coverage above 80%. New code should be tested.
+- **Mutation score** — keep mutation score above the break threshold. Surviving mutants indicate weak assertions that should be strengthened.

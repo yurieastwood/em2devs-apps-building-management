@@ -12,9 +12,24 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.3" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" GeneratePathProperty="true" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.12.54" />
   </ItemGroup>
+
+  <!--
+    Workaround: Stryker.NET's Roslyn compilation does not support InterceptorsNamespaces,
+    causing CS9137 when the OpenAPI source generator emits interceptor code.
+    Disabling the analyzer lets Stryker compile; runtime OpenAPI generation is unaffected.
+    Track: https://github.com/stryker-mutator/stryker-net/issues/3402
+    Remove this target once Stryker ships the fix from PR #3471.
+  -->
+  <Target Name="DisableOpenApiSourceGenerator"
+          BeforeTargets="CoreCompile"
+          Condition="'$(STRYKER_MUTATING)' != ''">
+    <ItemGroup>
+      <Analyzer Remove="$(PkgMicrosoft_AspNetCore_OpenApi)/analyzers/dotnet/cs/Microsoft.AspNetCore.OpenApi.SourceGenerators.dll" />
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <ProjectReference Include="..\EM2Devs.BuildingManagement.Application\EM2Devs.BuildingManagement.Application.csproj" />
