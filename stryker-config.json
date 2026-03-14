@@ -11,7 +11,7 @@
       "break": 5
     },
     "mutate": [
-      "**/*.cs",
+      "src/**/*.cs",
       "!**/Program.cs",
       "!**/Contracts/**/*.cs",
       "!**/Migrations/**/*.cs",
