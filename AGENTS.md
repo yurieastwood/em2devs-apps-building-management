@@ -194,8 +194,8 @@ dotnet test -c Release /p:CollectCoverage=true       # With coverage
 [Stryker.NET](https://github.com/stryker-mutator/stryker-net) validates that the test suite catches real code changes. Config lives in `stryker-config.json`.
 
 ```bash
-dotnet stryker                                       # Full run
-dotnet stryker --since:main                          # Incremental (changed code only)
+STRYKER_MUTATING=true dotnet stryker                 # Full run
+STRYKER_MUTATING=true dotnet stryker --since:main    # Incremental (changed code only)
 ```
 
 - **Initial Break threshold**: 5% — builds fail below this score.
