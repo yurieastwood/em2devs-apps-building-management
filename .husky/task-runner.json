@@ -22,6 +22,16 @@
       }
     },
     {
+      "name": "mutation-testing",
+      "command": "sh",
+      "args": [".husky/csx/mutation-test.sh"],
+      "group": "pre-push",
+      "windows": {
+        "command": "sh",
+        "args": [".husky/csx/mutation-test.sh"]
+      }
+    },
+    {
       "name": "dotnet-format",
       "command": "dotnet",
       "args": ["format", "--verify-no-changes", "--verbosity", "quiet"],
